@@ -1,0 +1,47 @@
+.welcome{
+
+    min-height:100vh;
+
+    display:flex;
+
+    flex-direction:column;
+
+    justify-content:center;
+
+    align-items:center;
+
+    gap:var(--dh-space-4);
+
+    background:var(--dh-background);
+
+}
+
+.welcome__logo{
+
+    font-size:72px;
+
+}
+
+h1{
+
+    font-size:56px;
+
+    color:var(--dh-text-primary);
+
+}
+
+p{
+
+    margin:0;
+
+    font-size:20px;
+
+    color:var(--dh-text-secondary);
+
+}
+
+span{
+
+    color:var(--dh-text-muted);
+
+}

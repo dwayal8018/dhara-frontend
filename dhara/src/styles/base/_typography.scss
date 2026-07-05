@@ -1,0 +1,28 @@
+body {
+
+    font-family: var(--dh-font-body);
+
+    font-weight: var(--dh-fw-regular);
+
+    line-height: 1.5;
+
+    text-rendering: optimizeLegibility;
+
+    -webkit-font-smoothing: antialiased;
+
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+
+    font-family: var(--dh-font-heading);
+
+    font-weight: var(--dh-fw-bold);
+
+    margin: 0;
+
+}
