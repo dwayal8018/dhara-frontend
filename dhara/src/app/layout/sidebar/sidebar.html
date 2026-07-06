@@ -10,7 +10,7 @@
 
   <!-- Nav items -->
   <nav class="sidebar__nav">
-    @for(item of navItems; track item.id) {
+    @for(item of navItems(); track item.id) {
       <a class="sidebar__item"
          [routerLink]="item.route"
          routerLinkActive="sidebar__item--active">

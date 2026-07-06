@@ -1,0 +1,113 @@
+<div class="login-page">
+
+  <!-- Brand -->
+  <div class="login-brand">
+    <div class="login-brand__logo">
+      <span class="material-symbols-outlined">storefront</span>
+    </div>
+    <div class="login-brand__text">
+      <h1>{{ shopName() }}</h1>
+      <p>Sign in to continue</p>
+    </div>
+  </div>
+
+  <!-- Card -->
+  <div class="login-card">
+
+    <!-- ── Step 1: Pick a user ────────────────────────────────────────── -->
+    @if(step() === 'pick') {
+
+      <div class="login-card__header">
+        <h2>Who's logging in?</h2>
+        <p>Select your account to continue</p>
+      </div>
+
+      <div class="user-list">
+        @for(u of activeUsers(); track u.id) {
+          <button class="user-item" (click)="selectUser(u)">
+            <div class="user-item__avatar"
+              [style.background]="avatarColor(u.avatar) + '18'"
+              [style.color]="avatarColor(u.avatar)">
+              {{ initials(u.name) }}
+            </div>
+            <div class="user-item__info">
+              <span class="user-item__name">{{ u.name }}</span>
+              <span class="user-item__role role--{{ roleColor(u.role) }}">{{ u.role }}</span>
+            </div>
+            <span class="material-symbols-outlined user-item__arrow">chevron_right</span>
+          </button>
+        }
+      </div>
+
+    <!-- ── Step 2: PIN entry ───────────────────────────────────────────── -->
+    } @else {
+
+      @let user = selectedUser()!;
+
+      <div class="login-card__header">
+        <button class="back-btn" (click)="back()">
+          <span class="material-symbols-outlined">arrow_back</span>
+        </button>
+        <div class="pin-user">
+          <div class="pin-user__avatar"
+            [style.background]="avatarColor(user.avatar) + '18'"
+            [style.color]="avatarColor(user.avatar)">
+            {{ initials(user.name) }}
+          </div>
+          <div>
+            <div class="pin-user__name">{{ user.name }}</div>
+            <div class="pin-user__role role--{{ roleColor(user.role) }}">{{ user.role }}</div>
+          </div>
+        </div>
+        <p class="pin-hint">Enter your 4-digit PIN</p>
+      </div>
+
+      <!-- PIN dots -->
+      <div class="pin-dots">
+        @for(filled of pinDisplay(); track $index) {
+          <div class="pin-dot" [class.pin-dot--filled]="filled"
+            [class.pin-dot--error]="error()"></div>
+        }
+      </div>
+
+      @if(error()) {
+        <div class="pin-error">
+          <span class="material-symbols-outlined">error_outline</span>
+          {{ error() }}
+        </div>
+      }
+
+      <!-- Numpad -->
+      <div class="numpad">
+        @for(key of numpad; track $index) {
+          @if(key === '') {
+            <div class="numpad__empty"></div>
+          } @else if(key === '⌫') {
+            <button class="numpad__key numpad__key--del"
+              (click)="deleteLast()" [disabled]="loading()">
+              <span class="material-symbols-outlined">backspace</span>
+            </button>
+          } @else {
+            <button class="numpad__key"
+              (click)="appendDigit(key)" [disabled]="loading() || pin().length >= 4">
+              {{ key }}
+            </button>
+          }
+        }
+      </div>
+
+      @if(loading()) {
+        <div class="pin-loading">
+          <span class="material-symbols-outlined spin">progress_activity</span>
+          Verifying…
+        </div>
+      }
+
+    }
+
+  </div>
+
+  <!-- Footer -->
+  <p class="login-footer">DHARA Business Suite &copy; {{ currentYear }}</p>
+
+</div>

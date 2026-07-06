@@ -1,7 +1,9 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { DASHBOARD_STATS, QUICK_ACTIONS, LOW_STOCK, BORROWERS, TRANSACTIONS } from './dashboard.data';
+import { AuthService } from '../../../core/services/auth.service';
+import { AppSettingsService } from '../../../core/services/app-settings.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -13,9 +15,18 @@ import { DASHBOARD_STATS, QUICK_ACTIONS, LOW_STOCK, BORROWERS, TRANSACTIONS } fr
 })
 export class Dashboard {
 
-  readonly today = new Date();
-  readonly ownerName = 'Dnyaneshwari';
-  readonly shopName = 'DHARA Business';
+  private readonly auth     = inject(AuthService);
+  private readonly settings = inject(AppSettingsService);
+  private readonly router   = inject(Router);
+
+  readonly today    = new Date();
+  readonly shopName = computed(() => this.settings.shop().shopName);
+
+  // Derive owner name from the logged-in user's name
+  readonly ownerName = computed(() => {
+    const user = this.auth.currentUser();
+    return user ? user.name.split(' ')[0] : 'there';
+  });
   readonly monthlyTarget = 1500000;
 
   readonly stats = DASHBOARD_STATS;
@@ -34,7 +45,7 @@ export class Dashboard {
     'Supplier Ganesh Tiles invoice PUR-0211 is due in 3 days.'
   ];
 
-  constructor(private router: Router) {}
+  constructor() {}
 
   navigate(route: string) { this.router.navigate([route]); }
 

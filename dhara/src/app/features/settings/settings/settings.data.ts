@@ -60,12 +60,12 @@ export interface NotificationPref {
 
 export const SHOP_PROFILE: ShopProfile = {
   shopName:  'DHARA Business',
-  ownerName: 'Dnyaneshwari Patil',
+  ownerName: 'Dnyaneshwari Wayal',
   phone:     '9822011234',
   altPhone:  '9822011235',
   email:     'dhara.business@gmail.com',
   address:   'Plot 14, Indira Nagar, Near Bus Stand',
-  city:      'Nashik',
+  city:      'Pune',
   state:     'Maharashtra',
   pincode:   '422001',
   gst:       '27ABCPD1234F1Z5',
@@ -81,7 +81,7 @@ export const SHOP_PROFILE: ShopProfile = {
 
 export const STAFF_USERS: StaffUser[] = [
   {
-    id: 1, name: 'Dnyaneshwari Patil', phone: '9822011234', email: 'dhara.business@gmail.com',
+    id: 1, name: 'Dnyaneshwari Wayal', phone: '9822011234', email: 'dhara.business@gmail.com',
     role: 'Owner', status: 'Active', joinDate: 'Jan 2020', lastLogin: 'Today, 09:14 AM',
     avatar: 'purple',
     permissions: ['All Access']

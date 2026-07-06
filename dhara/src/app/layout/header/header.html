@@ -1,25 +1,196 @@
 <header class="topbar">
 
+  <!-- ── Search ─────────────────────────────────────────────────────────── -->
   <div class="topbar__left">
-    <div class="topbar__search">
-      <span class="material-symbols-outlined">search</span>
-      <input type="text" placeholder="Search products, customers, invoices...">
+    <div class="topbar__search" [class.topbar__search--open]="showSearch()">
+
+      <span class="material-symbols-outlined search-icon">search</span>
+
+      <input
+        #searchInput
+        type="text"
+        placeholder="Search pages, settings, actions…"
+        autocomplete="off"
+        (focus)="onSearchFocus()"
+        (input)="onSearchInput(searchInput.value)"
+      >
+
+      @if(search.query()) {
+        <button class="search-clear" (click)="clearSearch(searchInput)" title="Clear">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      }
     </div>
+
+    <!-- Search dropdown -->
+    @if(showSearch()) {
+      <div class="search-dropdown">
+
+        <!-- Query results -->
+        @if(search.query().length > 0) {
+          @if(groupedResults().length === 0) {
+            <div class="search-empty">
+              <span class="material-symbols-outlined">search_off</span>
+              <span>No results for "{{ search.query() }}"</span>
+            </div>
+          } @else {
+            @for(group of groupedResults(); track group.cat) {
+              <div class="search-group-label">{{ group.cat }}</div>
+              @for(item of group.items; track item.route + item.label) {
+                <button class="search-result" (click)="navigateTo(item.route)">
+                  <span class="search-result__icon material-symbols-outlined">{{ item.icon }}</span>
+                  <div class="search-result__text">
+                    <span class="search-result__label">{{ item.label }}</span>
+                    <span class="search-result__desc">{{ item.description }}</span>
+                  </div>
+                  <span class="material-symbols-outlined search-result__arrow">chevron_right</span>
+                </button>
+              }
+            }
+          }
+
+        <!-- Quick nav (empty query) -->
+        } @else {
+          <div class="search-group-label">Quick Access</div>
+          @for(item of quickNav; track item.route) {
+            <button class="search-result" (click)="navigateTo(item.route)">
+              <span class="search-result__icon material-symbols-outlined">{{ item.icon }}</span>
+              <div class="search-result__text">
+                <span class="search-result__label">{{ item.label }}</span>
+              </div>
+              <span class="material-symbols-outlined search-result__arrow">chevron_right</span>
+            </button>
+          }
+        }
+
+      </div>
+    }
   </div>
 
+  <!-- ── Right actions ───────────────────────────────────────────────────── -->
   <div class="topbar__right">
 
-    <button class="topbar__notif" aria-label="Notifications">
-      <span class="material-symbols-outlined">notifications</span>
-      <span class="topbar__badge">{{ notificationCount }}</span>
-    </button>
+    <!-- Notifications -->
+    <div class="topbar__action-wrap">
+      <button class="topbar__icon-btn" (click)="toggleNotifs()" aria-label="Notifications"
+        [class.active]="showNotifs()">
+        <span class="material-symbols-outlined">notifications</span>
+        @if(unreadCount() > 0) {
+          <span class="topbar__badge">{{ unreadCount() > 9 ? '9+' : unreadCount() }}</span>
+        }
+      </button>
 
-    <div class="topbar__user">
-      <div class="topbar__avatar" aria-hidden="true">D</div>
-      <div class="topbar__user-info">
-        <span class="topbar__user-name">{{ userName }}</span>
-        <span class="topbar__user-role">Admin</span>
-      </div>
+      @if(showNotifs()) {
+        <div class="panel notif-panel">
+          <div class="panel__header">
+            <span class="panel__title">Notifications</span>
+            @if(unreadCount() > 0) {
+              <button class="panel__action" (click)="markAllRead()">Mark all read</button>
+            }
+          </div>
+
+          <div class="notif-list">
+            @if(notifications().length === 0) {
+              <div class="notif-empty">
+                <span class="material-symbols-outlined">notifications_off</span>
+                <span>All caught up!</span>
+              </div>
+            }
+            @for(n of notifications(); track n.id) {
+              <div class="notif-item" [class.notif-item--unread]="!n.read"
+                (click)="markRead(n.id)">
+                <div class="notif-item__icon" [style.background]="n.iconColor + '18'"
+                  [style.color]="n.iconColor">
+                  <span class="material-symbols-outlined">{{ n.icon }}</span>
+                </div>
+                <div class="notif-item__body">
+                  <div class="notif-item__title">{{ n.title }}</div>
+                  <div class="notif-item__text">{{ n.body }}</div>
+                  <div class="notif-item__time">{{ n.time }}</div>
+                </div>
+                <button class="notif-item__dismiss"
+                  (click)="dismissNotif(n.id, $event)" title="Dismiss">
+                  <span class="material-symbols-outlined">close</span>
+                </button>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- User profile -->
+    <div class="topbar__action-wrap">
+      <button class="topbar__user" (click)="toggleProfile()"
+        [class.active]="showProfile()">
+        <div class="topbar__avatar"
+          [style.background]="userAvatarColor()"
+          aria-hidden="true">{{ userInitials() }}</div>
+        <div class="topbar__user-info">
+          <span class="topbar__user-name">{{ userName() }}</span>
+          <span class="topbar__user-role">{{ userRole() }}</span>
+        </div>
+        <span class="material-symbols-outlined topbar__chevron">
+          {{ showProfile() ? 'expand_less' : 'expand_more' }}
+        </span>
+      </button>
+
+      @if(showProfile()) {
+        <div class="panel profile-panel">
+          <!-- Shop info -->
+          <div class="profile-shop">
+            <div class="profile-shop__logo">
+              <span class="material-symbols-outlined">storefront</span>
+            </div>
+            <div>
+              <div class="profile-shop__name">{{ shopName() }}</div>
+              <div class="profile-shop__meta">{{ settings.shop().city }}, {{ settings.shop().state }}</div>
+            </div>
+          </div>
+
+          <div class="panel__divider"></div>
+
+          <!-- User info -->
+          <div class="profile-user">
+            <div class="profile-user__avatar"
+              [style.background]="userAvatarColor() + '20'"
+              [style.color]="userAvatarColor()">
+              {{ userInitials() }}
+            </div>
+            <div>
+              <div class="profile-user__name">{{ userName() }}</div>
+              <div class="profile-user__email">{{ settings.shop().email }}</div>
+            </div>
+          </div>
+
+          <div class="panel__divider"></div>
+
+          <!-- Menu items -->
+          <div class="profile-menu">
+            <button class="profile-menu__item" (click)="goToSettings()">
+              <span class="material-symbols-outlined">manage_accounts</span>
+              Account Settings
+            </button>
+            <button class="profile-menu__item" (click)="goToSettings()">
+              <span class="material-symbols-outlined">store</span>
+              Shop Profile
+            </button>
+            <button class="profile-menu__item" (click)="goToSettings()">
+              <span class="material-symbols-outlined">palette</span>
+              Appearance
+            </button>
+          </div>
+
+          <div class="panel__divider"></div>
+
+          <div class="profile-menu">
+            <button class="profile-menu__item profile-menu__item--danger" (click)="logout()">
+              <span class="material-symbols-outlined">logout</span>
+              Sign Out
+            </button>
+          </div>
+        </div>
+      }
     </div>
 
   </div>
