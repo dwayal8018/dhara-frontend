@@ -1,0 +1,15 @@
+/* ===========================================
+   Z-Index Tokens
+=========================================== */
+
+:root {
+  --dh-z-base: 0;
+  --dh-z-dropdown: 100;
+  --dh-z-sticky: 200;
+  --dh-z-fixed: 300;
+  --dh-z-modal-backdrop: 400;
+  --dh-z-modal: 500;
+  --dh-z-popover: 600;
+  --dh-z-tooltip: 700;
+  --dh-z-toast: 800;
+}

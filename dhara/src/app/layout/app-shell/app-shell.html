@@ -1,0 +1,12 @@
+<div class="shell" [class.shell--collapsed]="collapsed()">
+
+  <dh-sidebar (collapseChange)="onCollapseToggle($event)"></dh-sidebar>
+
+  <div class="shell__main">
+    <dh-header [sidebarCollapsed]="collapsed()"></dh-header>
+    <main class="shell__content">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+
+</div>

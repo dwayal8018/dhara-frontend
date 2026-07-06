@@ -1,0 +1,29 @@
+.dh-input{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:8px;
+
+}
+
+.dh-input input{
+
+    height:44px;
+
+    border-radius:10px;
+
+    border:1px solid #d6d6d6;
+
+    padding:0 16px;
+
+    outline:none;
+
+}
+
+.dh-input input:focus{
+
+    border-color:var(--dh-primary);
+
+}

@@ -1,0 +1,197 @@
+<div class="dashboard">
+
+  <!-- HERO -->
+  <section class="hero">
+    <div>
+      <span class="hero__welcome">{{ greeting() }}, {{ ownerName }} 👋</span>
+      <h1>Welcome back to {{ shopName }}</h1>
+      <p>Here's how your business is performing today.</p>
+    </div>
+    <div class="hero__date">
+      {{ today | date:'EEEE, dd MMMM yyyy' }}
+    </div>
+  </section>
+
+
+  <!-- KPI CARDS -->
+  <section class="stats">
+    @for(card of stats; track card.id) {
+      <div class="stat-card">
+        <div class="stat-card__top">
+          <div class="stat-card__icon" [style.background]="card.color + '20'" >
+            <span class="material-symbols-outlined" [style.color]="card.color">{{ card.icon }}</span>
+          </div>
+          <span class="trend" [class.up]="card.trend === 'up'" [class.down]="card.trend === 'down'">
+            @if(card.trend === 'up') { ↑ } @else { ↓ }
+            {{ card.change }}%
+          </span>
+        </div>
+        <p class="stat-card__label">{{ card.title }}</p>
+        <h2 class="stat-card__value">{{ card.value }}</h2>
+      </div>
+    }
+  </section>
+
+
+  <!-- QUICK ACTIONS -->
+  <section class="panel">
+    <div class="panel__header">
+      <h2>Quick Actions</h2>
+      <span>Frequently used shortcuts</span>
+    </div>
+    <div class="quick-actions">
+      @for(action of quickActions; track action.id) {
+        <button class="action">
+          <div class="action__icon" [style.background]="action.color + '20'">
+            <span class="material-symbols-outlined" [style.color]="action.color">{{ action.icon }}</span>
+          </div>
+          <div class="action__text">
+            <strong>{{ action.title }}</strong>
+            <small>{{ action.subtitle }}</small>
+          </div>
+        </button>
+      }
+    </div>
+  </section>
+
+
+  <!-- LOW STOCK + BORROWERS GRID -->
+  <section class="two-col-grid">
+
+    <!-- LOW STOCK -->
+    <div class="card">
+      <div class="card__header">
+        <h3>Low Stock Products</h3>
+        <span class="card__badge">{{ lowStock.length }} Items</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Category</th>
+              <th>Stock</th>
+              <th>Min</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for(item of lowStock; track item.id) {
+              <tr>
+                <td>{{ item.product }}</td>
+                <td><span class="tag">{{ item.category }}</span></td>
+                <td><span class="badge danger">{{ item.stock }}</span></td>
+                <td class="muted">{{ item.threshold }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- BORROWERS -->
+    <div class="card">
+      <div class="card__header">
+        <h3>Borrowers</h3>
+        <span class="card__badge">₹{{ totalBorrowing() | number }}</span>
+      </div>
+      <div class="borrower-list">
+        @for(item of borrowers; track item.id) {
+          <div class="borrower">
+            <div class="borrower__info">
+              <strong>{{ item.name }}</strong>
+              <small>{{ item.phone }} · {{ item.dueDays }} days pending</small>
+            </div>
+            <span class="borrower__amount" [class.overdue]="item.dueDays > 20">
+              ₹{{ item.amount | number }}
+            </span>
+          </div>
+        }
+      </div>
+    </div>
+
+  </section>
+
+
+  <!-- TRANSACTIONS -->
+  <section class="card">
+    <div class="card__header">
+      <h3>Recent Transactions</h3>
+      <span class="card__badge">Total ₹{{ totalSales() | number }}</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Invoice</th>
+            <th>Customer</th>
+            <th>Type</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Time</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for(tx of transactions; track tx.id) {
+            <tr>
+              <td class="mono">{{ tx.invoice }}</td>
+              <td>{{ tx.customer }}</td>
+              <td>
+                <span class="badge"
+                  [class.info]="tx.type === 'Sale'"
+                  [class.warning]="tx.type === 'Return'"
+                  [class.purple]="tx.type === 'Purchase'">
+                  {{ tx.type }}
+                </span>
+              </td>
+              <td class="amount">₹{{ tx.amount | number }}</td>
+              <td>
+                <span class="badge"
+                  [class.success]="tx.status === 'Paid'"
+                  [class.warning]="tx.status === 'Pending'">
+                  {{ tx.status }}
+                </span>
+              </td>
+              <td class="muted">{{ tx.date }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+
+  <!-- MONTHLY TARGET -->
+  <section class="card">
+    <div class="card__header">
+      <h3>Monthly Target</h3>
+      <span>₹{{ (monthlyTarget / 100000) | number:'1.1-1' }}L target</span>
+    </div>
+    <div class="target-progress">
+      <div class="target-bar">
+        <div class="target-bar__fill" [style.width.%]="progressPercent()"></div>
+      </div>
+      <div class="target-meta">
+        <span>₹{{ totalSales() | number }} collected (paid sales today)</span>
+        <span>{{ progressPercent() }}% of monthly target</span>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- SMART SUGGESTIONS -->
+  <section class="card">
+    <div class="card__header">
+      <h3>Smart Suggestions</h3>
+      <span class="badge info">AI</span>
+    </div>
+    <div class="suggestions">
+      @for(item of smartSuggestions; track $index) {
+        <div class="suggestion">
+          <span class="material-symbols-outlined">auto_awesome</span>
+          <p>{{ item }}</p>
+        </div>
+      }
+    </div>
+  </section>
+
+</div>

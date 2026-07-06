@@ -1,0 +1,162 @@
+.dh-button {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: var(--dh-space-2);
+
+    border: none;
+
+    cursor: pointer;
+
+    transition: all var(--dh-fast) var(--dh-ease);
+
+    border-radius: var(--dh-radius-md);
+
+    font-family: var(--dh-font-body);
+
+    font-weight: var(--dh-fw-semibold);
+
+    user-select: none;
+
+    white-space: nowrap;
+
+}
+
+/* Sizes */
+
+.dh-button--sm {
+
+    height: 36px;
+
+    padding: 0 var(--dh-space-3);
+
+}
+
+.dh-button--md {
+
+    height: 44px;
+
+    padding: 0 var(--dh-space-4);
+
+}
+
+.dh-button--lg {
+
+    height: 52px;
+
+    padding: 0 var(--dh-space-5);
+
+}
+
+/* Primary */
+
+.dh-button--primary {
+
+    background: var(--dh-primary);
+
+    color: white;
+
+}
+
+.dh-button--primary:hover {
+
+    background: var(--dh-primary-hover);
+
+}
+
+/* Secondary */
+
+.dh-button--secondary {
+
+    background: var(--dh-secondary);
+
+    color: var(--dh-text-primary);
+
+}
+
+/* Outline */
+
+.dh-button--outline {
+
+    background: transparent;
+
+    border: 1px solid var(--dh-border);
+
+    color: var(--dh-text-primary);
+
+}
+
+/* Ghost */
+
+.dh-button--ghost {
+
+    background: transparent;
+
+    color: var(--dh-primary);
+
+}
+
+/* Success */
+
+.dh-button--success {
+
+    background: var(--dh-success);
+
+    color: white;
+
+}
+
+/* Danger */
+
+.dh-button--danger {
+
+    background: var(--dh-error);
+
+    color: white;
+
+}
+
+.dh-button--full {
+
+    width: 100%;
+
+}
+
+.dh-button:disabled {
+
+    opacity: .5;
+
+    cursor: not-allowed;
+
+}
+
+
+.dh-button__spinner {
+
+    width: 16px;
+
+    height: 16px;
+
+    border-radius: 50%;
+
+    border: 2px solid rgba(255,255,255,.4);
+
+    border-top-color: white;
+
+    animation: spin 0.8s linear infinite;
+
+}
+
+@keyframes spin {
+
+    to {
+
+        transform: rotate(360deg);
+
+    }
+
+}

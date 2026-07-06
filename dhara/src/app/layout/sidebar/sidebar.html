@@ -1,0 +1,30 @@
+<aside class="sidebar" [class.sidebar--collapsed]="collapsed()">
+
+  <!-- Logo area -->
+  <div class="sidebar__brand">
+    <div class="sidebar__logo">
+      <span class="material-symbols-outlined">storefront</span>
+    </div>
+    <span class="sidebar__name">DHARA</span>
+  </div>
+
+  <!-- Nav items -->
+  <nav class="sidebar__nav">
+    @for(item of navItems; track item.id) {
+      <a class="sidebar__item"
+         [routerLink]="item.route"
+         routerLinkActive="sidebar__item--active">
+        <span class="material-symbols-outlined sidebar__icon">{{ item.icon }}</span>
+        <span class="sidebar__label">{{ item.label }}</span>
+      </a>
+    }
+  </nav>
+
+  <!-- Collapse toggle -->
+  <button class="sidebar__collapse" (click)="toggleCollapse()">
+    <span class="material-symbols-outlined">
+      {{ collapsed() ? 'chevron_right' : 'chevron_left' }}
+    </span>
+  </button>
+
+</aside>

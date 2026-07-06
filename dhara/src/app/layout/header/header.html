@@ -1,0 +1,27 @@
+<header class="topbar">
+
+  <div class="topbar__left">
+    <div class="topbar__search">
+      <span class="material-symbols-outlined">search</span>
+      <input type="text" placeholder="Search products, customers, invoices...">
+    </div>
+  </div>
+
+  <div class="topbar__right">
+
+    <button class="topbar__notif" aria-label="Notifications">
+      <span class="material-symbols-outlined">notifications</span>
+      <span class="topbar__badge">{{ notificationCount }}</span>
+    </button>
+
+    <div class="topbar__user">
+      <div class="topbar__avatar" aria-hidden="true">D</div>
+      <div class="topbar__user-info">
+        <span class="topbar__user-name">{{ userName }}</span>
+        <span class="topbar__user-role">Admin</span>
+      </div>
+    </div>
+
+  </div>
+
+</header>

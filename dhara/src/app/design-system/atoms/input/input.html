@@ -1,0 +1,14 @@
+<div class="dh-input">
+
+    @if(label()){
+
+        <label>{{label()}}</label>
+
+    }
+
+    <input
+        [type]="type()"
+        [placeholder]="placeholder()"
+        [disabled]="disabled()">
+
+</div>

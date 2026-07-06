@@ -1,0 +1,23 @@
+<button
+    type="button"
+    class="dh-button"
+    [disabled]="disabled() || loading()"
+    [ngClass]="[
+        'dh-button--' + variant(),
+        'dh-button--' + size(),
+        fullWidth() ? 'dh-button--full' : ''
+    ]">
+
+    @if (loading()) {
+
+        <span class="dh-button__spinner"></span>
+
+        <span>Loading...</span>
+
+    } @else {
+
+        <ng-content></ng-content>
+
+    }
+
+</button>
