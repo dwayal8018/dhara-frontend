@@ -1,13 +1,7 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-
-import {
-  DASHBOARD_STATS,
-  QUICK_ACTIONS,
-  LOW_STOCK,
-  BORROWERS,
-  TRANSACTIONS
-} from './dashboard.data';
+import { Router } from '@angular/router';
+import { DASHBOARD_STATS, QUICK_ACTIONS, LOW_STOCK, BORROWERS, TRANSACTIONS } from './dashboard.data';
 
 @Component({
   selector: 'app-dashboard',
@@ -40,6 +34,10 @@ export class Dashboard {
     'Supplier Ganesh Tiles invoice PUR-0211 is due in 3 days.'
   ];
 
+  constructor(private router: Router) {}
+
+  navigate(route: string) { this.router.navigate([route]); }
+
   greeting(): string {
     const hour = new Date().getHours();
     if (hour < 12) return 'Good Morning';
@@ -48,7 +46,7 @@ export class Dashboard {
   }
 
   totalBorrowing(): number {
-    return this.borrowers.reduce((sum, item) => sum + item.amount, 0);
+    return this.borrowers.reduce((sum, b) => sum + b.amount, 0);
   }
 
   pendingInvoices(): number {
@@ -58,15 +56,12 @@ export class Dashboard {
   totalSales(): number {
     return this.transactions
       .filter(t => t.type === 'Sale' && t.status === 'Paid')
-      .reduce((sum, item) => sum + item.amount, 0);
+      .reduce((sum, t) => sum + t.amount, 0);
   }
 
   progressPercent(): number {
     return Math.round((this.totalSales() / this.monthlyTarget) * 100);
   }
 
-  trackById(_: number, item: { id: number }) {
-    return item.id;
-  }
-
+  trackById(_: number, item: { id: number }) { return item.id; }
 }

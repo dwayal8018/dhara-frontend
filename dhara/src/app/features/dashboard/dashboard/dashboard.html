@@ -41,7 +41,7 @@
     </div>
     <div class="quick-actions">
       @for(action of quickActions; track action.id) {
-        <button class="action">
+       <button class="action" (click)="navigate(action.route)">
           <div class="action__icon" [style.background]="action.color + '20'">
             <span class="material-symbols-outlined" [style.color]="action.color">{{ action.icon }}</span>
           </div>

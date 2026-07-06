@@ -1,0 +1,373 @@
+<div class="sales">
+
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <div class="page-header__left">
+      <h1 class="page-title">Sales</h1>
+      <p class="page-subtitle">Create invoices and manage your sales transactions</p>
+    </div>
+    <div class="page-header__right">
+      <div class="tab-toggle">
+        <button [class.active]="activeTab() === 'new'" (click)="activeTab.set('new')">
+          <span class="material-symbols-outlined">add_shopping_cart</span> New Sale
+        </button>
+        <button [class.active]="activeTab() === 'history'" (click)="activeTab.set('history')">
+          <span class="material-symbols-outlined">history</span> Invoice History
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ═══ NEW SALE TAB ═══════════════════════════════════════════════════ -->
+  @if(activeTab() === 'new') {
+  <div class="pos-layout">
+
+    <!-- LEFT: Product Catalogue -->
+    <div class="catalogue-panel">
+      <div class="panel-head">
+        <span class="panel-head__title">Products</span>
+        <span class="panel-head__count">{{ filteredProducts().length }} items</span>
+      </div>
+
+      <!-- Search -->
+      <div class="cat-search">
+        <span class="material-symbols-outlined">search</span>
+        <input type="text" placeholder="Search by name or SKU…"
+          [value]="productSearch()"
+          (input)="productSearch.set($any($event.target).value)">
+        @if(productSearch()) {
+          <button class="cat-search__clear" (click)="productSearch.set('')">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        }
+      </div>
+
+      <!-- Product list -->
+      <div class="cat-list">
+        @for(p of filteredProducts(); track p.id) {
+          <button class="cat-item" (click)="addToCart(p)" [class.low-stock]="p.stock <= 5">
+            <div class="cat-item__icon">
+              <span class="material-symbols-outlined">inventory_2</span>
+            </div>
+            <div class="cat-item__info">
+              <span class="cat-item__name">{{ p.name }}</span>
+              <span class="cat-item__meta">{{ p.sku }} · {{ p.unit }}</span>
+            </div>
+            <div class="cat-item__right">
+              <span class="cat-item__price">₹{{ p.sellingPrice | number }}</span>
+              <span class="cat-item__stock" [class.low]="p.stock <= 5">
+                {{ p.stock }} left
+              </span>
+            </div>
+          </button>
+        }
+        @if(filteredProducts().length === 0) {
+          <div class="empty-state">
+            <span class="material-symbols-outlined">search_off</span>
+            <p>No products match "{{ productSearch() }}"</p>
+          </div>
+        }
+      </div>
+    </div>
+
+
+    <!-- RIGHT: Invoice Builder -->
+    <div class="invoice-panel">
+
+      <!-- Invoice header row -->
+      <div class="inv-meta">
+        <div class="inv-meta__number">
+          <span class="material-symbols-outlined">receipt_long</span>
+          <strong>{{ invoiceNumber() }}</strong>
+        </div>
+        <div class="inv-meta__date">{{ today | date:'dd MMM yyyy, hh:mm a' }}</div>
+      </div>
+
+      <!-- Customer details -->
+      <div class="customer-row">
+        <div class="field">
+          <label>Customer Name</label>
+          <input type="text" placeholder="Walk-in Customer"
+            [value]="customerName()"
+            (input)="customerName.set($any($event.target).value)">
+        </div>
+        <div class="field field--sm">
+          <label>Phone</label>
+          <input type="text" placeholder="9XXXXXXXXX"
+            [value]="customerPhone()"
+            (input)="customerPhone.set($any($event.target).value)">
+        </div>
+      </div>
+
+      <!-- Cart items -->
+      <div class="cart-section">
+        <div class="cart-head">
+          <span>Item</span>
+          <span>Qty</span>
+          <span>Unit Price</span>
+          <span>Disc %</span>
+          <span>Amount</span>
+          <span></span>
+        </div>
+
+        @if(cart().length === 0) {
+          <div class="cart-empty">
+            <span class="material-symbols-outlined">add_shopping_cart</span>
+            <p>Click products on the left to add them here</p>
+          </div>
+        }
+
+        @for(item of cart(); track item.product.id) {
+          <div class="cart-row">
+            <div class="cart-row__name">
+              <span class="cart-row__product">{{ item.product.name }}</span>
+              <span class="cart-row__sku">{{ item.product.sku }} · GST {{ item.product.gst }}%</span>
+            </div>
+
+            <!-- Qty stepper -->
+            <div class="qty-stepper">
+              <button (click)="updateQty(item.product.id, item.qty - 1)">
+                <span class="material-symbols-outlined">remove</span>
+              </button>
+              <input type="number" min="1"
+                [value]="item.qty"
+                (change)="updateQty(item.product.id, +$any($event.target).value)">
+              <button (click)="updateQty(item.product.id, item.qty + 1)">
+                <span class="material-symbols-outlined">add</span>
+              </button>
+            </div>
+
+            <!-- Unit price -->
+            <div class="price-input">
+              <span>₹</span>
+              <input type="number" min="0"
+                [value]="item.price"
+                (change)="updatePrice(item.product.id, +$any($event.target).value)">
+            </div>
+
+            <!-- Discount -->
+            <div class="disc-input">
+              <input type="number" min="0" max="100"
+                [value]="item.discount"
+                (change)="updateLineDiscount(item.product.id, +$any($event.target).value)">
+              <span>%</span>
+            </div>
+
+            <!-- Line total -->
+            <div class="cart-row__total">
+              ₹{{ (item.qty * item.price * (1 - item.discount / 100)) | number:'1.0-0' }}
+            </div>
+
+            <button class="remove-btn" (click)="removeFromCart(item.product.id)" title="Remove">
+              <span class="material-symbols-outlined">delete_outline</span>
+            </button>
+          </div>
+        }
+      </div>
+
+      <!-- Summary + Payment -->
+      <div class="billing-section">
+
+        <!-- Totals -->
+        <div class="totals">
+          <div class="totals__row">
+            <span>Subtotal</span>
+            <span>₹{{ subtotal() | number:'1.0-0' }}</span>
+          </div>
+          <div class="totals__row">
+            <span>
+              Extra Discount
+              <input class="inline-input" type="number" min="0" max="100"
+                [value]="extraDiscount()"
+                (input)="extraDiscount.set(+$any($event.target).value)">%
+            </span>
+            <span class="discount-val">
+              – ₹{{ (subtotal() * extraDiscount() / 100) | number:'1.0-0' }}
+            </span>
+          </div>
+          <div class="totals__row">
+            <span>GST</span>
+            <span>₹{{ gstAmount() | number:'1.0-0' }}</span>
+          </div>
+          <div class="totals__row totals__row--grand">
+            <span>Grand Total</span>
+            <span>₹{{ grandTotal() | number:'1.0-0' }}</span>
+          </div>
+        </div>
+
+        <!-- Payment mode -->
+        <div class="payment-modes">
+          @for(m of paymentModes; track m) {
+            <button class="mode-btn" [class.active]="paymentMode() === m"
+              (click)="setPaymentMode(m)">
+              <span class="material-symbols-outlined">{{ modeIcon(m) }}</span>
+              {{ m }}
+            </button>
+          }
+        </div>
+
+        <!-- Amount paid -->
+        <div class="paid-row">
+          <div class="field">
+            <label>Amount Paid (₹)</label>
+            <div class="paid-input-wrap">
+              <input type="number" min="0"
+                [value]="amountPaid()"
+                (input)="amountPaid.set(+$any($event.target).value)">
+              <button class="pay-full-btn" (click)="payFull()">Pay Full</button>
+            </div>
+          </div>
+          <div class="balance-box" [class.positive]="balance() > 0" [class.zero]="balance() <= 0">
+            <span class="balance-label">{{ balance() > 0 ? 'Balance Due' : 'Change' }}</span>
+            <span class="balance-amount">₹{{ (balance() > 0 ? balance() : -balance()) | number:'1.0-0' }}</span>
+          </div>
+        </div>
+
+        <!-- Notes -->
+        <div class="field">
+          <label>Notes (optional)</label>
+          <input type="text" placeholder="e.g. Delivery scheduled for tomorrow"
+            [value]="notes()" (input)="notes.set($any($event.target).value)">
+        </div>
+
+        <!-- Action buttons -->
+        <div class="action-row">
+          <button class="btn btn--ghost" (click)="clearCart()">
+            <span class="material-symbols-outlined">clear_all</span> Clear
+          </button>
+          <button class="btn btn--outline" (click)="printInvoice()">
+            <span class="material-symbols-outlined">print</span> Print
+          </button>
+          <button class="btn btn--primary" (click)="saveSale()">
+            <span class="material-symbols-outlined">check_circle</span> Save Invoice
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+  }
+
+
+  <!-- ═══ INVOICE HISTORY TAB ════════════════════════════════════════════ -->
+  @if(activeTab() === 'history') {
+  <div class="history-panel">
+
+    <!-- Toolbar -->
+    <div class="history-toolbar">
+      <div class="toolbar__search">
+        <span class="material-symbols-outlined">search</span>
+        <input type="text" placeholder="Search invoice, customer, phone…"
+          [value]="historySearch()"
+          (input)="historySearch.set($any($event.target).value)">
+      </div>
+      <div class="filter-pills">
+        @for(f of ['all','Paid','Pending','Partial']; track f) {
+          <button class="pill" [class.active]="historyFilter() === f"
+            (click)="historyFilter.set($any(f))">
+            {{ f === 'all' ? 'All' : f }}
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- Stats row -->
+    <div class="history-stats">
+      <div class="hstat">
+        <span class="hstat__label">Total Invoices</span>
+        <span class="hstat__value">{{ filteredHistory().length }}</span>
+      </div>
+      <div class="hstat">
+        <span class="hstat__label">Total Revenue</span>
+        <span class="hstat__value">₹{{ historyTotalRevenue() | number:'1.0-0' }}</span>
+      </div>
+      <div class="hstat">
+        <span class="hstat__label">Amount Collected</span>
+        <span class="hstat__value">₹{{ historyTotalCollected() | number:'1.0-0' }}</span>
+      </div>
+      <div class="hstat">
+        <span class="hstat__label">Pending</span>
+        <span class="hstat__value pending">₹{{ historyTotalPending() | number:'1.0-0' }}</span>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Invoice</th>
+            <th>Customer</th>
+            <th>Phone</th>
+            <th>Items</th>
+            <th>Subtotal</th>
+            <th>GST</th>
+            <th>Discount</th>
+            <th>Total</th>
+            <th>Paid</th>
+            <th>Mode</th>
+            <th>Status</th>
+            <th>Date</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for(inv of filteredHistory(); track inv.id) {
+            <tr>
+              <td class="mono">{{ inv.invoice }}</td>
+              <td class="name-cell">{{ inv.customer }}</td>
+              <td class="muted">{{ inv.phone }}</td>
+              <td class="center">{{ inv.items }}</td>
+              <td class="amount">₹{{ inv.subtotal | number }}</td>
+              <td class="muted">₹{{ inv.gstAmt | number }}</td>
+              <td class="muted">{{ inv.discount }}%</td>
+              <td class="amount bold">₹{{ inv.total | number }}</td>
+              <td class="amount" [class.partial]="inv.paid < inv.total">
+                ₹{{ inv.paid | number }}
+              </td>
+              <td>
+                <span class="mode-tag">
+                  <span class="material-symbols-outlined">{{ modeIcon(inv.paymentMode) }}</span>
+                  {{ inv.paymentMode }}
+                </span>
+              </td>
+              <td>
+                <span class="badge" [class]="statusClass(inv.status)">{{ inv.status }}</span>
+              </td>
+              <td class="muted small">
+                <div>{{ inv.date }}</div>
+                <div>{{ inv.time }}</div>
+              </td>
+              <td>
+                <div class="row-actions">
+                  <button class="icon-btn" title="Print invoice">
+                    <span class="material-symbols-outlined">print</span>
+                  </button>
+                  <button class="icon-btn" title="View details">
+                    <span class="material-symbols-outlined">open_in_new</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if(filteredHistory().length === 0) {
+      <div class="empty-state full">
+        <span class="material-symbols-outlined">receipt_long</span>
+        <p>No invoices found</p>
+      </div>
+    }
+
+  </div>
+  }
+
+</div>
+
+@if(toast()) {
+  <div class="toast">{{ toast() }}</div>
+}

@@ -1,0 +1,563 @@
+<div class="purchases">
+
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <div class="page-header__left">
+      <h1 class="page-title">Purchases</h1>
+      <p class="page-subtitle">Manage supplier orders, stock-in and payment dues</p>
+    </div>
+    <div class="page-header__right">
+      <div class="tab-toggle">
+        <button [class.active]="activeTab() === 'orders'" (click)="activeTab.set('orders')">
+          <span class="material-symbols-outlined">list_alt</span> All Orders
+        </button>
+        <button [class.active]="activeTab() === 'new'" (click)="activeTab.set('new')">
+          <span class="material-symbols-outlined">add_shopping_cart</span> New Order
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI STATS -->
+  <div class="stats-row">
+    @for(s of stats; track s.label) {
+      <div class="stat-card">
+        <div class="stat-card__icon" [style.background]="s.color + '18'">
+          <span class="material-symbols-outlined" [style.color]="s.color">{{ s.icon }}</span>
+        </div>
+        <div>
+          <div class="stat-card__value">{{ s.value }}</div>
+          <div class="stat-card__label">{{ s.label }}</div>
+        </div>
+      </div>
+    }
+  </div>
+
+
+  <!-- ═══ ORDERS LIST TAB ════════════════════════════════════════════════ -->
+  @if(activeTab() === 'orders') {
+  <div class="orders-panel">
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="toolbar__search">
+        <span class="material-symbols-outlined">search</span>
+        <input type="text" placeholder="Search PO number, supplier, invoice ref…"
+          [value]="search()" (input)="search.set($any($event.target).value)">
+        @if(search()) {
+          <button class="clear-btn" (click)="search.set('')">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        }
+      </div>
+      <div class="toolbar__filters">
+        <select (change)="statusFilter.set($any($event.target).value)">
+          <option value="all">All Status</option>
+          <option value="Received">Received</option>
+          <option value="Pending">Pending</option>
+          <option value="Partial">Partial</option>
+          <option value="Cancelled">Cancelled</option>
+        </select>
+        <select (change)="paymentFilter.set($any($event.target).value)">
+          <option value="all">All Payments</option>
+          <option value="Paid">Paid</option>
+          <option value="Unpaid">Unpaid</option>
+          <option value="Partial">Partial</option>
+        </select>
+      </div>
+      <div class="toolbar__summary">
+        <span>{{ filteredOrders().length }} orders</span>
+        @if(totalDue() > 0) {
+          <span class="due-badge">Due: ₹{{ totalDue() | number:'1.0-0' }}</span>
+        }
+      </div>
+    </div>
+
+    <!-- Orders Table -->
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>PO Number</th>
+            <th>Supplier</th>
+            <th>Date</th>
+            <th>Due Date</th>
+            <th>Items</th>
+            <th>Subtotal</th>
+            <th>GST</th>
+            <th>Grand Total</th>
+            <th>Paid</th>
+            <th>Due</th>
+            <th>Mode</th>
+            <th>Status</th>
+            <th>Payment</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for(o of filteredOrders(); track o.id) {
+            <tr>
+              <td class="mono">{{ o.poNumber }}</td>
+              <td>
+                <div class="supplier-cell">
+                  <div class="sup-avatar"
+                    [style.background]="avatarColor(suppliers[o.supplierId - 1]?.avatar ?? 'blue') + '20'"
+                    [style.color]="avatarColor(suppliers[o.supplierId - 1]?.avatar ?? 'blue')">
+                    {{ supplierInitials(o.supplier) }}
+                  </div>
+                  <div>
+                    <div class="sup-name">{{ o.supplier }}</div>
+                    <div class="sup-phone">{{ o.supplierPhone }}</div>
+                  </div>
+                </div>
+              </td>
+              <td class="muted">{{ o.date }}</td>
+              <td class="muted">{{ o.dueDate }}</td>
+              <td class="center">{{ o.items.length }}</td>
+              <td class="amount">₹{{ o.subtotal | number }}</td>
+              <td class="muted">₹{{ o.gstAmount | number }}</td>
+              <td class="amount bold">₹{{ o.grandTotal | number }}</td>
+              <td class="amount paid">₹{{ o.paid | number }}</td>
+              <td class="amount" [class.due]="due(o) > 0">
+                {{ due(o) > 0 ? ('₹' + (due(o) | number)) : '—' }}
+              </td>
+              <td class="muted small">{{ o.paymentMode }}</td>
+              <td><span class="badge" [class]="statusClass(o.status)">{{ o.status }}</span></td>
+              <td><span class="badge" [class]="payStatusClass(o.paymentStatus)">{{ o.paymentStatus }}</span></td>
+              <td>
+                <div class="row-actions">
+                  <button class="icon-btn" title="View details" (click)="openDetail(o)">
+                    <span class="material-symbols-outlined">open_in_new</span>
+                  </button>
+                  @if(o.paymentStatus !== 'Paid') {
+                    <button class="icon-btn pay" title="Record payment" (click)="openPayModal(o)">
+                      <span class="material-symbols-outlined">payments</span>
+                    </button>
+                  }
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if(filteredOrders().length === 0) {
+      <div class="empty-state">
+        <span class="material-symbols-outlined">search_off</span>
+        <p>No purchase orders match your filters</p>
+      </div>
+    }
+
+    <!-- Supplier Dues Summary -->
+    <div class="sup-dues-section">
+      <div class="sup-dues-header">
+        <h3>Supplier Outstanding Dues</h3>
+      </div>
+      <div class="sup-dues-grid">
+        @for(s of suppliers; track s.id) {
+          <div class="sup-due-card">
+            <div class="sup-due-card__avatar"
+              [style.background]="avatarColor(s.avatar) + '20'"
+              [style.color]="avatarColor(s.avatar)">
+              {{ supplierInitials(s.name) }}
+            </div>
+            <div class="sup-due-card__info">
+              <div class="sup-due-card__name">{{ s.name }}</div>
+              <div class="sup-due-card__meta">{{ s.area }} · {{ s.totalOrders }} orders</div>
+            </div>
+            <div class="sup-due-card__amount" [class.zero]="s.outstanding === 0">
+              {{ s.outstanding > 0 ? ('₹' + (s.outstanding | number)) : 'Clear' }}
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+
+  </div>
+  }
+
+
+  <!-- ═══ NEW PURCHASE ORDER TAB ═════════════════════════════════════════ -->
+  @if(activeTab() === 'new') {
+  <div class="new-order-layout">
+
+    <!-- LEFT: Product Catalogue -->
+    <div class="catalogue-panel">
+      <div class="panel-head">
+        <span class="panel-head__title">Products</span>
+        <span class="panel-head__count">{{ filteredCatalogue().length }}</span>
+      </div>
+      <div class="cat-search">
+        <span class="material-symbols-outlined">search</span>
+        <input type="text" placeholder="Search product or SKU…"
+          [value]="productSearch()"
+          (input)="productSearch.set($any($event.target).value)">
+        @if(productSearch()) {
+          <button class="clear-btn" (click)="productSearch.set('')">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        }
+      </div>
+      <div class="cat-list">
+        @for(p of filteredCatalogue(); track p.id) {
+          <button class="cat-item" (click)="addToCart(p)">
+            <div class="cat-item__icon">
+              <span class="material-symbols-outlined">inventory_2</span>
+            </div>
+            <div class="cat-item__info">
+              <span class="cat-item__name">{{ p.name }}</span>
+              <span class="cat-item__meta">{{ p.sku }} · {{ p.unit }}</span>
+            </div>
+            <div class="cat-item__right">
+              <span class="cat-item__price">₹{{ p.lastRate | number }}</span>
+              <span class="cat-item__gst">GST {{ p.gst }}%</span>
+            </div>
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- RIGHT: Order Form -->
+    <div class="order-form-panel">
+
+      <!-- PO Header -->
+      <div class="po-meta">
+        <div class="po-meta__number">
+          <span class="material-symbols-outlined">shopping_bag</span>
+          <strong>New Purchase Order — PUR-0242</strong>
+        </div>
+        <div class="po-meta__date">{{ today | date:'dd MMM yyyy' }}</div>
+      </div>
+
+      <!-- Supplier + dates + mode -->
+      <div class="po-fields">
+        <div class="field-row">
+          <div class="field field--lg">
+            <label>Supplier <span class="req">*</span></label>
+            <select [value]="newSupplier()" (change)="newSupplier.set($any($event.target).value)">
+              <option value="">— Select Supplier —</option>
+              @for(s of suppliers; track s.id) {
+                <option [value]="s.name">{{ s.name }}</option>
+              }
+            </select>
+          </div>
+          <div class="field">
+            <label>Due Date</label>
+            <input type="date" [value]="newDueDate()"
+              (input)="newDueDate.set($any($event.target).value)">
+          </div>
+          <div class="field">
+            <label>Payment Mode</label>
+            <select [value]="newPayMode()" (change)="newPayMode.set($any($event.target).value)">
+              @for(m of paymentModes; track m) {
+                <option [value]="m">{{ m }}</option>
+              }
+            </select>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Supplier Invoice Ref</label>
+            <input type="text" placeholder="e.g. SUP-2291"
+              [value]="newInvoiceRef()" (input)="newInvoiceRef.set($any($event.target).value)">
+          </div>
+          <div class="field field--lg">
+            <label>Notes</label>
+            <input type="text" placeholder="Optional notes about this order…"
+              [value]="newNotes()" (input)="newNotes.set($any($event.target).value)">
+          </div>
+        </div>
+      </div>
+
+      <!-- Cart -->
+      <div class="cart-section">
+        <div class="cart-head">
+          <span>Product</span>
+          <span>SKU</span>
+          <span>Unit</span>
+          <span>Qty</span>
+          <span>Rate (₹)</span>
+          <span>GST</span>
+          <span>Amount</span>
+          <span></span>
+        </div>
+
+        @if(cart().length === 0) {
+          <div class="cart-empty">
+            <span class="material-symbols-outlined">add_shopping_cart</span>
+            <p>Click products on the left to add them to this order</p>
+          </div>
+        }
+
+        @for(line of cart(); track line.product.id) {
+          <div class="cart-row">
+            <div class="cart-row__name">{{ line.product.name }}</div>
+            <div class="mono small">{{ line.product.sku }}</div>
+            <div class="muted small">{{ line.product.unit }}</div>
+
+            <!-- Qty stepper -->
+            <div class="qty-stepper">
+              <button (click)="updateCartQty(line.product.id, line.qty - 1)">
+                <span class="material-symbols-outlined">remove</span>
+              </button>
+              <input type="number" min="1" [value]="line.qty"
+                (change)="updateCartQty(line.product.id, +$any($event.target).value)">
+              <button (click)="updateCartQty(line.product.id, line.qty + 1)">
+                <span class="material-symbols-outlined">add</span>
+              </button>
+            </div>
+
+            <!-- Rate -->
+            <div class="rate-input">
+              <span>₹</span>
+              <input type="number" min="0" [value]="line.rate"
+                (change)="updateCartRate(line.product.id, +$any($event.target).value)">
+            </div>
+
+            <div class="gst-col">{{ line.product.gst }}%</div>
+
+            <div class="line-total">
+              ₹{{ (line.qty * line.rate * (1 + line.product.gst / 100)) | number:'1.0-0' }}
+            </div>
+
+            <button class="remove-btn" (click)="removeFromCart(line.product.id)">
+              <span class="material-symbols-outlined">delete_outline</span>
+            </button>
+          </div>
+        }
+      </div>
+
+      <!-- Totals + Save -->
+      @if(cart().length > 0) {
+        <div class="totals-bar">
+          <div class="totals-bar__items">
+            <div class="total-chip">
+              <span>Subtotal</span>
+              <strong>₹{{ newSubtotal() | number:'1.0-0' }}</strong>
+            </div>
+            <span class="sep">+</span>
+            <div class="total-chip">
+              <span>GST</span>
+              <strong>₹{{ newGst() | number:'1.0-0' }}</strong>
+            </div>
+            <span class="sep">=</span>
+            <div class="total-chip grand">
+              <span>Grand Total</span>
+              <strong>₹{{ newTotal() | number:'1.0-0' }}</strong>
+            </div>
+          </div>
+          <div class="totals-bar__actions">
+            <button class="btn btn--ghost" (click)="cart.set([]); productSearch.set('')">
+              <span class="material-symbols-outlined">clear_all</span> Clear
+            </button>
+            <button class="btn btn--primary" (click)="savePurchaseOrder()">
+              <span class="material-symbols-outlined">check_circle</span> Save Purchase Order
+            </button>
+          </div>
+        </div>
+      }
+
+    </div>
+  </div>
+  }
+
+</div>
+
+
+<!-- ══ ORDER DETAIL MODAL ═════════════════════════════════════════════════════-->
+@if(showDetail() && selectedOrder(); as o) {
+  <div class="modal-backdrop" (click)="showDetail.set(false)">
+    <div class="modal modal--wide" (click)="$event.stopPropagation()">
+
+      <div class="modal__header">
+        <h2 class="modal__title">
+          <span class="material-symbols-outlined">receipt_long</span>
+          {{ o.poNumber }}
+          @if(o.invoiceRef) { <span class="inv-ref">Ref: {{ o.invoiceRef }}</span> }
+        </h2>
+        <div class="modal__header-actions">
+          @if(o.paymentStatus !== 'Paid') {
+            <button class="btn btn--primary btn--sm" (click)="showDetail.set(false); openPayModal(o)">
+              <span class="material-symbols-outlined">payments</span> Record Payment
+            </button>
+          }
+          <button class="modal__close" (click)="showDetail.set(false)">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="modal__body">
+
+        <!-- Supplier + dates row -->
+        <div class="detail-meta">
+          <div class="detail-meta__block">
+            <span class="detail-label">Supplier</span>
+            <span class="detail-value">{{ o.supplier }}</span>
+            <span class="detail-sub">{{ o.supplierPhone }}</span>
+          </div>
+          <div class="detail-meta__block">
+            <span class="detail-label">Order Date</span>
+            <span class="detail-value">{{ o.date }}</span>
+          </div>
+          <div class="detail-meta__block">
+            <span class="detail-label">Due Date</span>
+            <span class="detail-value">{{ o.dueDate }}</span>
+          </div>
+          <div class="detail-meta__block">
+            <span class="detail-label">Payment Mode</span>
+            <span class="detail-value">{{ o.paymentMode }}</span>
+          </div>
+          <div class="detail-meta__block">
+            <span class="detail-label">Delivery Status</span>
+            <span class="badge" [class]="statusClass(o.status)">{{ o.status }}</span>
+          </div>
+          <div class="detail-meta__block">
+            <span class="detail-label">Payment Status</span>
+            <span class="badge" [class]="payStatusClass(o.paymentStatus)">{{ o.paymentStatus }}</span>
+          </div>
+        </div>
+
+        @if(o.notes) {
+          <div class="detail-notes">
+            <span class="material-symbols-outlined">info</span> {{ o.notes }}
+          </div>
+        }
+
+        <!-- Items table -->
+        <div class="detail-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>SKU</th>
+                <th>Product</th>
+                <th>Unit</th>
+                <th>Qty</th>
+                <th>Rate</th>
+                <th>GST %</th>
+                <th>GST Amt</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for(item of o.items; track item.productId; let i = $index) {
+                <tr>
+                  <td class="muted">{{ i + 1 }}</td>
+                  <td class="mono">{{ item.sku }}</td>
+                  <td class="item-name">{{ item.name }}</td>
+                  <td class="muted">{{ item.unit }}</td>
+                  <td class="center">{{ item.qty }}</td>
+                  <td class="amount">₹{{ item.rate | number }}</td>
+                  <td class="center muted">{{ item.gst }}%</td>
+                  <td class="muted">₹{{ (item.total * item.gst / 100) | number:'1.0-0' }}</td>
+                  <td class="amount bold">₹{{ (item.total * (1 + item.gst / 100)) | number:'1.0-0' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Totals summary -->
+        <div class="detail-totals">
+          <div class="detail-total-row">
+            <span>Subtotal</span><span>₹{{ o.subtotal | number }}</span>
+          </div>
+          <div class="detail-total-row">
+            <span>GST</span><span>₹{{ o.gstAmount | number }}</span>
+          </div>
+          <div class="detail-total-row grand">
+            <span>Grand Total</span><span>₹{{ o.grandTotal | number }}</span>
+          </div>
+          <div class="detail-total-row paid">
+            <span>Amount Paid</span><span>₹{{ o.paid | number }}</span>
+          </div>
+          @if(due(o) > 0) {
+            <div class="detail-total-row due">
+              <span>Balance Due</span><span>₹{{ due(o) | number }}</span>
+            </div>
+          }
+        </div>
+
+      </div>
+    </div>
+  </div>
+}
+
+
+<!-- ══ RECORD PAYMENT MODAL ══════════════════════════════════════════════════ -->
+@if(showPayModal() && selectedOrder(); as o) {
+  <div class="modal-backdrop" (click)="showPayModal.set(false)">
+    <div class="modal" (click)="$event.stopPropagation()">
+
+      <div class="modal__header">
+        <h2 class="modal__title">
+          <span class="material-symbols-outlined">payments</span>
+          Pay Supplier
+        </h2>
+        <button class="modal__close" (click)="showPayModal.set(false)">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <div class="modal__body">
+        <div class="pay-info-row">
+          <div>
+            <div class="pay-po">{{ o.poNumber }}</div>
+            <div class="pay-supplier">{{ o.supplier }}</div>
+          </div>
+          <div class="pay-due-box">
+            <span class="pay-due-label">Balance Due</span>
+            <span class="pay-due-val">₹{{ due(o) | number }}</span>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group form-group--lg">
+            <label>Amount (₹) <span class="req">*</span></label>
+            <input type="number" min="0"
+              [value]="payAmount()"
+              (input)="payAmount.set(+$any($event.target).value)">
+          </div>
+          <div class="form-group">
+            <label>Payment Mode</label>
+            <select [value]="payMode()" (change)="payMode.set($any($event.target).value)">
+              @for(m of paymentModes; track m) {
+                <option [value]="m">{{ m }}</option>
+              }
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Reference / Cheque No.</label>
+          <input type="text" placeholder="e.g. NEFT ref, Cheque no."
+            [value]="payRef()" (input)="payRef.set($any($event.target).value)">
+        </div>
+
+        <div class="quick-amounts">
+          <span class="quick-amounts__label">Quick:</span>
+          @for(pct of [25, 50, 75, 100]; track pct) {
+            <button class="quick-chip"
+              (click)="payAmount.set(Math.round(due(o) * pct / 100))">
+              {{ pct }}%
+            </button>
+          }
+        </div>
+      </div>
+
+      <div class="modal__footer">
+        <button class="btn btn--outline" (click)="showPayModal.set(false)">Cancel</button>
+        <button class="btn btn--primary" (click)="recordPayment()">
+          <span class="material-symbols-outlined">check_circle</span> Record Payment
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+
+@if(toast()) {
+  <div class="toast">{{ toast() }}</div>
+}

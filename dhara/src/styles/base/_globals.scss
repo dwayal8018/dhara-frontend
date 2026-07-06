@@ -11,9 +11,54 @@ html {
 body {
   margin: 0;
   padding: 0;
-
   background: var(--dh-background);
   color: var(--dh-text-primary);
+  /* font-family intentionally NOT set here — _typography.scss sets it
+     via var(--dh-font-body) so language overrides work correctly.      */
+}
 
-  font-family: system-ui, sans-serif;
+/* ── Font Size ───────────────────────────────────────────────────────────────
+   Service sets data-font-size="small|medium|large" on <html>.
+   We override the CSS font-size custom properties so rem-based text scales.
+   For the label/body text specifically we set font-size on body directly.
+────────────────────────────────────────────────────────────────────────────── */
+
+[data-font-size="small"]  body { font-size: 13px; }
+[data-font-size="medium"] body { font-size: 15px; }
+[data-font-size="large"]  body { font-size: 17px; }
+
+/* ── Language / Script ───────────────────────────────────────────────────────
+   Service sets data-lang="devanagari|latin" on <html>.
+   Overrides --dh-font-body and --dh-font-heading CSS variables so every
+   component using var(--dh-font-body) / var(--dh-font-heading) picks up
+   the Devanagari font automatically.
+
+   IMPORTANT: we target only text elements, NEVER .material-symbols-outlined.
+   The icon font works via font ligatures — overriding font-family on those
+   spans breaks all icons (they show raw text like "dashboard", "settings").
+────────────────────────────────────────────────────────────────────────────── */
+
+[data-lang="devanagari"] {
+  --dh-font-body:    "Noto Sans Devanagari", "Mukta", system-ui, sans-serif;
+  --dh-font-heading: "Noto Sans Devanagari", "Mukta", system-ui, sans-serif;
+}
+
+/* Apply to body and the text elements that may have an explicit font-family
+   set. Exclude .material-symbols-outlined to keep icons rendering correctly. */
+[data-lang="devanagari"] body,
+[data-lang="devanagari"] p,
+[data-lang="devanagari"] span:not(.material-symbols-outlined),
+[data-lang="devanagari"] a,
+[data-lang="devanagari"] h1,
+[data-lang="devanagari"] h2,
+[data-lang="devanagari"] h3,
+[data-lang="devanagari"] h4,
+[data-lang="devanagari"] h5,
+[data-lang="devanagari"] h6,
+[data-lang="devanagari"] label,
+[data-lang="devanagari"] input,
+[data-lang="devanagari"] select,
+[data-lang="devanagari"] textarea,
+[data-lang="devanagari"] button:not(.material-symbols-outlined) {
+  font-family: var(--dh-font-body);
 }

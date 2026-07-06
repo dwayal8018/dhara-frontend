@@ -1,0 +1,535 @@
+<div class="settings">
+
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <div class="page-header__left">
+      <h1 class="page-title">Settings</h1>
+      <p class="page-subtitle">Configure your shop, users, taxes and preferences</p>
+    </div>
+  </div>
+
+  <!-- SETTINGS LAYOUT -->
+  <div class="settings-layout">
+
+    <!-- SIDEBAR NAV -->
+    <nav class="settings-nav">
+      @for(tab of [
+        {id:'shop',          label:'Shop Profile',    icon:'store'},
+        {id:'users',         label:'Users & Staff',   icon:'manage_accounts'},
+        {id:'tax',           label:'Tax & GST',       icon:'receipt_long'},
+        {id:'notifications', label:'Notifications',   icon:'notifications'},
+        {id:'appearance',    label:'Appearance',      icon:'palette'}
+      ]; track tab.id) {
+        <button class="nav-item" [class.active]="activeTab() === tab.id"
+          (click)="activeTab.set($any(tab.id))">
+          <span class="material-symbols-outlined">{{ tab.icon }}</span>
+          {{ tab.label }}
+        </button>
+      }
+    </nav>
+
+    <!-- CONTENT AREA -->
+    <div class="settings-content">
+
+      <!-- ═══ SHOP PROFILE ══════════════════════════════════════════════ -->
+      @if(activeTab() === 'shop') {
+      <div class="section">
+        <div class="section-header">
+          <h2>Shop Profile</h2>
+          <p>Basic information about your business</p>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Business Information</div>
+          <div class="form-grid">
+            <div class="form-group form-group--lg">
+              <label>Shop / Business Name</label>
+              <input type="text" [value]="shop().shopName"
+                (input)="updateShop('shopName', $any($event.target).value)">
+            </div>
+            <div class="form-group form-group--lg">
+              <label>Owner Name</label>
+              <input type="text" [value]="shop().ownerName"
+                (input)="updateShop('ownerName', $any($event.target).value)">
+            </div>
+            <div class="form-group">
+              <label>Primary Phone</label>
+              <input type="text" [value]="shop().phone"
+                (input)="updateShop('phone', $any($event.target).value)">
+            </div>
+            <div class="form-group">
+              <label>Alternate Phone</label>
+              <input type="text" [value]="shop().altPhone"
+                (input)="updateShop('altPhone', $any($event.target).value)">
+            </div>
+            <div class="form-group form-group--lg">
+              <label>Email Address</label>
+              <input type="email" [value]="shop().email"
+                (input)="updateShop('email', $any($event.target).value)">
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Address</div>
+          <div class="form-grid">
+            <div class="form-group form-group--full">
+              <label>Street Address</label>
+              <input type="text" [value]="shop().address"
+                (input)="updateShop('address', $any($event.target).value)">
+            </div>
+            <div class="form-group">
+              <label>City</label>
+              <input type="text" [value]="shop().city"
+                (input)="updateShop('city', $any($event.target).value)">
+            </div>
+            <div class="form-group">
+              <label>State</label>
+              <input type="text" [value]="shop().state"
+                (input)="updateShop('state', $any($event.target).value)">
+            </div>
+            <div class="form-group">
+              <label>Pincode</label>
+              <input type="text" [value]="shop().pincode"
+                (input)="updateShop('pincode', $any($event.target).value)">
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Legal & Tax Registration</div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>GST Number</label>
+              <input type="text" [value]="shop().gst"
+                (input)="updateShop('gst', $any($event.target).value)">
+            </div>
+            <div class="form-group">
+              <label>PAN Number</label>
+              <input type="text" [value]="shop().pan"
+                (input)="updateShop('pan', $any($event.target).value)">
+            </div>
+            <div class="form-group form-group--lg">
+              <label>Udyam / MSME Registration</label>
+              <input type="text" [value]="shop().udyam"
+                (input)="updateShop('udyam', $any($event.target).value)">
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Bank & Payment Details</div>
+          <div class="form-grid">
+            <div class="form-group form-group--lg">
+              <label>Bank Name</label>
+              <input type="text" [value]="shop().bankName"
+                (input)="updateShop('bankName', $any($event.target).value)">
+            </div>
+            <div class="form-group form-group--lg">
+              <label>Account Number</label>
+              <input type="text" [value]="shop().accountNo"
+                (input)="updateShop('accountNo', $any($event.target).value)">
+            </div>
+            <div class="form-group">
+              <label>IFSC Code</label>
+              <input type="text" [value]="shop().ifsc"
+                (input)="updateShop('ifsc', $any($event.target).value)">
+            </div>
+            <div class="form-group">
+              <label>UPI ID</label>
+              <input type="text" [value]="shop().upiId"
+                (input)="updateShop('upiId', $any($event.target).value)">
+            </div>
+          </div>
+        </div>
+
+        <div class="save-row">
+          <button class="btn btn--primary" (click)="saveShop()">
+            <span class="material-symbols-outlined">save</span> Save Changes
+          </button>
+        </div>
+      </div>
+      }
+
+
+      <!-- ═══ USERS & STAFF ══════════════════════════════════════════════ -->
+      @if(activeTab() === 'users') {
+      <div class="section">
+        <div class="section-header">
+          <h2>Users &amp; Staff</h2>
+          <p>Manage who can access the system and what they can do</p>
+        </div>
+
+        <div class="users-header-row">
+          <span class="user-count">{{ users().length }} staff members</span>
+          <button class="btn btn--primary" (click)="openAddUser()">
+            <span class="material-symbols-outlined">person_add</span> Add Staff
+          </button>
+        </div>
+
+        <div class="user-list">
+          @for(u of users(); track u.id) {
+            <div class="user-card" [class.inactive]="u.status === 'Inactive'">
+              <div class="user-card__avatar"
+                [style.background]="avatarColor(u.avatar) + '20'"
+                [style.color]="avatarColor(u.avatar)">
+                {{ initials(u.name) }}
+              </div>
+              <div class="user-card__info">
+                <div class="user-card__name">{{ u.name }}</div>
+                <div class="user-card__meta">{{ u.phone }} · {{ u.email }}</div>
+                <div class="user-card__perms">
+                  @for(p of u.permissions; track p) {
+                    <span class="perm-chip">{{ p }}</span>
+                  }
+                </div>
+              </div>
+              <div class="user-card__right">
+                <span class="role-badge role--{{ roleColor(u.role) }}">{{ u.role }}</span>
+                <span class="last-login">Last login: {{ u.lastLogin }}</span>
+                <div class="user-actions">
+                  <button class="icon-btn" (click)="openEditUser(u)" title="Edit">
+                    <span class="material-symbols-outlined">edit</span>
+                  </button>
+                  @if(u.role !== 'Owner') {
+                    <button class="icon-btn"
+                      [class.activate]="u.status === 'Inactive'"
+                      (click)="toggleUserStatus(u.id)"
+                      [title]="u.status === 'Active' ? 'Deactivate' : 'Activate'">
+                      <span class="material-symbols-outlined">
+                        {{ u.status === 'Active' ? 'block' : 'check_circle' }}
+                      </span>
+                    </button>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+      }
+
+
+      <!-- ═══ TAX & GST ════════════════════════════════════════════════ -->
+      @if(activeTab() === 'tax') {
+      <div class="section">
+        <div class="section-header">
+          <h2>Tax &amp; GST Configuration</h2>
+          <p>Configure GST settings and invoice tax behaviour</p>
+        </div>
+
+        <div class="card">
+          <div class="card-title">GST Registration</div>
+          <div class="form-grid">
+            <div class="form-group form-group--full">
+              <div class="toggle-row">
+                <div>
+                  <div class="toggle-label">GST Registered Business</div>
+                  <div class="toggle-desc">Enable to add GST on all invoices</div>
+                </div>
+                <button class="toggle-btn" [class.on]="tax().gstRegistered"
+                  (click)="updateTax('gstRegistered', !tax().gstRegistered)">
+                  <span class="toggle-knob"></span>
+                </button>
+              </div>
+            </div>
+            @if(tax().gstRegistered) {
+              <div class="form-group form-group--lg">
+                <label>GST Number</label>
+                <input type="text" [value]="tax().gstNumber"
+                  (input)="updateTax('gstNumber', $any($event.target).value)">
+              </div>
+              <div class="form-group">
+                <label>GST Filing Frequency</label>
+                <select [value]="tax().gstFiling"
+                  (change)="updateTax('gstFiling', $any($event.target).value)">
+                  @for(opt of filingOptions; track opt) {
+                    <option [value]="opt">{{ opt | titlecase }}</option>
+                  }
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Default GST Rate (%)</label>
+                <select [value]="tax().defaultGstRate"
+                  (change)="updateTax('defaultGstRate', +$any($event.target).value)">
+                  @for(r of gstRates; track r) {
+                    <option [value]="r">{{ r }}%</option>
+                  }
+                </select>
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Invoice Behaviour</div>
+          <div class="toggle-list">
+            <div class="toggle-row">
+              <div>
+                <div class="toggle-label">GST-Inclusive Pricing</div>
+                <div class="toggle-desc">Selling prices include GST by default</div>
+              </div>
+              <button class="toggle-btn" [class.on]="tax().inclusivePricing"
+                (click)="updateTax('inclusivePricing', !tax().inclusivePricing)">
+                <span class="toggle-knob"></span>
+              </button>
+            </div>
+            <div class="toggle-row">
+              <div>
+                <div class="toggle-label">Enable Cess</div>
+                <div class="toggle-desc">Apply additional cess on applicable items</div>
+              </div>
+              <button class="toggle-btn" [class.on]="tax().enableCess"
+                (click)="updateTax('enableCess', !tax().enableCess)">
+                <span class="toggle-knob"></span>
+              </button>
+            </div>
+            <div class="toggle-row">
+              <div>
+                <div class="toggle-label">Round Off Invoice Amount</div>
+                <div class="toggle-desc">Round invoice total to nearest rupee</div>
+              </div>
+              <button class="toggle-btn" [class.on]="tax().roundOffAmount"
+                (click)="updateTax('roundOffAmount', !tax().roundOffAmount)">
+                <span class="toggle-knob"></span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="save-row">
+          <button class="btn btn--primary" (click)="saveTax()">
+            <span class="material-symbols-outlined">save</span> Save Tax Settings
+          </button>
+        </div>
+      </div>
+      }
+
+
+      <!-- ═══ NOTIFICATIONS ════════════════════════════════════════════ -->
+      @if(activeTab() === 'notifications') {
+      <div class="section">
+        <div class="section-header">
+          <h2>Notification Preferences</h2>
+          <p>Choose how and when you want to be notified</p>
+        </div>
+
+        <div class="card notif-card">
+          <div class="notif-table-head">
+            <span>Alert Type</span>
+            <span class="notif-channel">SMS</span>
+            <span class="notif-channel">WhatsApp</span>
+            <span class="notif-channel">In-App</span>
+          </div>
+          @for(n of notifs(); track n.id) {
+            <div class="notif-row">
+              <div class="notif-info">
+                <div class="notif-label">{{ n.label }}</div>
+                <div class="notif-desc">{{ n.description }}</div>
+              </div>
+              <div class="notif-channel">
+                <button class="toggle-btn" [class.on]="n.sms"
+                  (click)="toggleNotif(n.id, 'sms')">
+                  <span class="toggle-knob"></span>
+                </button>
+              </div>
+              <div class="notif-channel">
+                <button class="toggle-btn" [class.on]="n.whatsapp"
+                  (click)="toggleNotif(n.id, 'whatsapp')">
+                  <span class="toggle-knob"></span>
+                </button>
+              </div>
+              <div class="notif-channel">
+                <button class="toggle-btn" [class.on]="n.inApp"
+                  (click)="toggleNotif(n.id, 'inApp')">
+                  <span class="toggle-knob"></span>
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+
+        <div class="save-row">
+          <button class="btn btn--primary" (click)="saveNotifs()">
+            <span class="material-symbols-outlined">save</span> Save Preferences
+          </button>
+        </div>
+      </div>
+      }
+
+
+      <!-- ═══ APPEARANCE ════════════════════════════════════════════════ -->
+      @if(activeTab() === 'appearance') {
+      <div class="section">
+        <div class="section-header">
+          <h2>Appearance</h2>
+          <p>Customize the look and feel of your workspace</p>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Theme</div>
+          <div class="theme-picker">
+            @for(t of themes; track t.id) {
+              <button class="theme-option" [class.active]="themeMode() === t.id"
+                (click)="themeMode.set(t.id)">
+                <div class="theme-option__preview theme-preview--{{ t.id }}">
+                  <span class="material-symbols-outlined">{{ t.icon }}</span>
+                </div>
+                <span>{{ t.label }}</span>
+              </button>
+            }
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Language &amp; Region</div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Language</label>
+              <select [value]="language()" (change)="language.set($any($event.target).value)">
+                @for(l of languages; track l) { <option [value]="l">{{ l }}</option> }
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Currency</label>
+              <select [value]="currency()" (change)="currency.set($any($event.target).value)">
+                <option value="INR — ₹ Indian Rupee">INR — ₹ Indian Rupee</option>
+                <option value="USD — $ US Dollar">USD — $ US Dollar</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Date Format</label>
+              <select [value]="dateFormat()" (change)="dateFormat.set($any($event.target).value)">
+                <option value="DD MMM YYYY">DD MMM YYYY</option>
+                <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+                <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+                <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Font Size</div>
+          <div class="font-size-picker">
+            @for(f of fontSizes; track f) {
+              <button class="font-option" [class.active]="fontSize() === f"
+                (click)="fontSize.set($any(f))">
+                <span [style.font-size]="f === 'small' ? '13px' : f === 'large' ? '17px' : '15px'">Aa</span>
+                <span class="font-label">{{ f | titlecase }}</span>
+              </button>
+            }
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Display Options</div>
+          <div class="toggle-list">
+            <div class="toggle-row">
+              <div>
+                <div class="toggle-label">Collapsed Sidebar by Default</div>
+                <div class="toggle-desc">Start with sidebar in collapsed/mini mode</div>
+              </div>
+              <button class="toggle-btn" [class.on]="sidebarCollapsed()"
+                (click)="sidebarCollapsed.update(v => !v)">
+                <span class="toggle-knob"></span>
+              </button>
+            </div>
+            <div class="toggle-row">
+              <div>
+                <div class="toggle-label">Compact Tables</div>
+                <div class="toggle-desc">Reduce row padding in all tables</div>
+              </div>
+              <button class="toggle-btn" [class.on]="compactTables()"
+                (click)="compactTables.update(v => !v)">
+                <span class="toggle-knob"></span>
+              </button>
+            </div>
+            <div class="toggle-row">
+              <div>
+                <div class="toggle-label">Show Prices in Grid View</div>
+                <div class="toggle-desc">Display selling price on inventory grid cards</div>
+              </div>
+              <button class="toggle-btn" [class.on]="showPriceInGrid()"
+                (click)="showPriceInGrid.update(v => !v)">
+                <span class="toggle-knob"></span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="save-row">
+          <button class="btn btn--primary" (click)="saveAppearance()">
+            <span class="material-symbols-outlined">save</span> Save Appearance
+          </button>
+        </div>
+      </div>
+      }
+
+    </div>
+  </div>
+</div>
+
+
+<!-- ══ ADD / EDIT USER MODAL ═══════════════════════════════════════════════ -->
+@if(showUserModal()) {
+  <div class="modal-backdrop" (click)="showUserModal.set(false)">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal__header">
+        <h2 class="modal__title">
+          <span class="material-symbols-outlined">{{ editingUser() ? 'edit' : 'person_add' }}</span>
+          {{ editingUser() ? 'Edit Staff Member' : 'Add Staff Member' }}
+        </h2>
+        <button class="modal__close" (click)="showUserModal.set(false)">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="modal__body">
+        <div class="form-row">
+          <div class="form-group form-group--lg">
+            <label>Full Name <span class="req">*</span></label>
+            <input type="text" placeholder="e.g. Sunil Kamble"
+              [value]="newName()" (input)="newName.set($any($event.target).value)">
+          </div>
+          <div class="form-group">
+            <label>Role</label>
+            <select [value]="newRole()" (change)="newRole.set($any($event.target).value)">
+              @for(r of roles; track r) { <option [value]="r">{{ r }}</option> }
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Phone <span class="req">*</span></label>
+            <input type="text" placeholder="9XXXXXXXXX"
+              [value]="newPhone()" (input)="newPhone.set($any($event.target).value)">
+          </div>
+          <div class="form-group form-group--lg">
+            <label>Email</label>
+            <input type="email" placeholder="staff@dhara.in"
+              [value]="newEmail()" (input)="newEmail.set($any($event.target).value)">
+          </div>
+        </div>
+        <!-- Role permissions preview -->
+        <div class="role-preview">
+          <span class="role-preview__label">Permissions for {{ newRole() }}:</span>
+          @for(p of rolePermissions(newRole()); track p) {
+            <span class="perm-chip">{{ p }}</span>
+          }
+        </div>
+      </div>
+      <div class="modal__footer">
+        <button class="btn btn--outline" (click)="showUserModal.set(false)">Cancel</button>
+        <button class="btn btn--primary" (click)="saveUser()">
+          <span class="material-symbols-outlined">save</span>
+          {{ editingUser() ? 'Save Changes' : 'Add Staff' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+
+@if(toast()) {
+  <div class="toast">{{ toast() }}</div>
+}

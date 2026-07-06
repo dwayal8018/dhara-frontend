@@ -1,11 +1,12 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  signal
+  inject
 } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { Sidebar } from '../sidebar/sidebar';
 import { Header } from '../header/header';
+import { AppSettingsService } from '../../core/services/app-settings.service';
 
 @Component({
   selector: 'dh-app-shell',
@@ -17,10 +18,13 @@ import { Header } from '../header/header';
 })
 export class AppShell {
 
-  collapsed = signal(false);
+  private readonly settings = inject(AppSettingsService);
+
+  // Expose to template as a computed read
+  collapsed = this.settings.sidebarCollapsed;
 
   onCollapseToggle(val: boolean): void {
-    this.collapsed.set(val);
+    this.settings.sidebarCollapsed.set(val);
   }
 
 }

@@ -1,0 +1,336 @@
+<div class="finance">
+
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <div class="page-header__left">
+      <h1 class="page-title">Finance</h1>
+      <p class="page-subtitle">Profit &amp; Loss, cash flow and expense overview — July 2026</p>
+    </div>
+    <div class="page-header__right">
+      <div class="tab-toggle">
+        <button [class.active]="activeTab() === 'overview'"  (click)="activeTab.set('overview')">
+          <span class="material-symbols-outlined">dashboard</span> Overview
+        </button>
+        <button [class.active]="activeTab() === 'cashflow'"  (click)="activeTab.set('cashflow')">
+          <span class="material-symbols-outlined">waterfall_chart</span> Cash Flow
+        </button>
+        <button [class.active]="activeTab() === 'expenses'"  (click)="activeTab.set('expenses')">
+          <span class="material-symbols-outlined">receipt_long</span> Transactions
+        </button>
+      </div>
+      <button class="btn btn--outline" (click)="showToast('Exporting financial report…')">
+        <span class="material-symbols-outlined">download</span> Export
+      </button>
+    </div>
+  </div>
+
+
+  <!-- ═══ OVERVIEW TAB ═══════════════════════════════════════════════════ -->
+  @if(activeTab() === 'overview') {
+  <div class="overview-panel">
+
+    <!-- KPI STATS GRID -->
+    <div class="stats-grid">
+      @for(s of stats; track s.label) {
+        <div class="stat-card">
+          <div class="stat-card__top">
+            <div class="stat-card__icon" [style.background]="s.color + '18'">
+              <span class="material-symbols-outlined" [style.color]="s.color">{{ s.icon }}</span>
+            </div>
+            <span class="trend-badge" [class.up]="s.trend === 'up'" [class.down]="s.trend === 'down'">
+              @if(s.trend === 'up') { ↑ } @else { ↓ }
+              {{ s.change }}%
+            </span>
+          </div>
+          <div class="stat-card__value">{{ s.value }}</div>
+          <div class="stat-card__label">{{ s.label }}</div>
+          @if(s.sub) { <div class="stat-card__sub">{{ s.sub }}</div> }
+        </div>
+      }
+    </div>
+
+    <!-- P&L SUMMARY + MINI CHART -->
+    <div class="two-col">
+
+      <!-- P&L Summary card -->
+      <div class="panel-card">
+        <div class="panel-card__header">
+          <h3>P&amp;L Summary — July 2026</h3>
+          <span class="badge success">Live</span>
+        </div>
+        <div class="pl-rows">
+          <div class="pl-row">
+            <span class="pl-label">Total Revenue</span>
+            <span class="pl-val revenue">₹{{ currentMonth.revenue | number }}</span>
+          </div>
+          <div class="pl-row sub">
+            <span class="pl-label">Less: Cost of Goods (Purchases)</span>
+            <span class="pl-val expense">– ₹{{ currentMonth.purchases | number }}</span>
+          </div>
+          <div class="pl-row total">
+            <span class="pl-label">Gross Profit</span>
+            <span class="pl-val profit">₹{{ currentMonth.grossProfit | number }}</span>
+          </div>
+          <div class="pl-spacer"></div>
+          @for(e of overheadLines; track e.id) {
+            <div class="pl-row sub">
+              <span class="pl-label">
+                <span class="material-symbols-outlined">{{ e.icon }}</span>
+                {{ e.category }}
+              </span>
+              <span class="pl-val expense">– ₹{{ e.amount | number }}</span>
+            </div>
+          }
+          <div class="pl-row total grand">
+            <span class="pl-label">Net Profit</span>
+            <span class="pl-val profit bold">₹{{ currentMonth.netProfit | number }}</span>
+          </div>
+          <div class="pl-margin">
+            Net Margin:
+            <strong>{{ marginPct(currentMonth) }}%</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- Revenue vs Expenses mini bar chart -->
+      <div class="panel-card">
+        <div class="panel-card__header">
+          <h3>Revenue vs Cost — 12 Months</h3>
+          <div class="chart-legend">
+            <span class="legend-dot revenue"></span> Revenue
+            <span class="legend-dot purchase"></span> Purchases
+            <span class="legend-dot profit"></span> Net Profit
+          </div>
+        </div>
+        <div class="bar-chart">
+          @for(m of monthlyFlow; track m.month) {
+            <div class="bar-group">
+              <div class="bar-stack">
+                <div class="bar bar--revenue"   [style.height.%]="barPct(m.revenue)"   [title]="'Revenue: ₹' + (m.revenue | number)"></div>
+                <div class="bar bar--purchase"  [style.height.%]="barPct(m.purchases)" [title]="'Purchases: ₹' + (m.purchases | number)"></div>
+                <div class="bar bar--profit"    [style.height.%]="barPct(m.netProfit)" [title]="'Net Profit: ₹' + (m.netProfit | number)"></div>
+              </div>
+              <div class="bar-label">{{ m.shortMonth }}</div>
+            </div>
+          }
+        </div>
+        <div class="chart-summary">
+          <div class="cs-item">
+            <span>12M Revenue</span>
+            <strong>₹{{ (ytdRevenue / 100000) | number:'1.1-1' }}L</strong>
+          </div>
+          <div class="cs-item">
+            <span>12M Purchases</span>
+            <strong>₹{{ (ytdPurchase / 100000) | number:'1.1-1' }}L</strong>
+          </div>
+          <div class="cs-item">
+            <span>12M Net Profit</span>
+            <strong class="profit-text">₹{{ (ytdProfit / 100000) | number:'1.1-1' }}L</strong>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Expense breakdown -->
+    <div class="panel-card">
+      <div class="panel-card__header">
+        <h3>Expense Breakdown — July 2026</h3>
+        <span class="muted-text">Total ₹{{ (currentMonth.purchases + totalOverheads) | number }}</span>
+      </div>
+      <div class="expense-breakdown">
+        @for(e of expenseLines; track e.id) {
+          <div class="exp-row">
+            <div class="exp-row__icon" [style.background]="e.color + '18'">
+              <span class="material-symbols-outlined" [style.color]="e.color">{{ e.icon }}</span>
+            </div>
+            <div class="exp-row__info">
+              <div class="exp-row__top">
+                <span class="exp-name">{{ e.category }}</span>
+                <span class="exp-amount">₹{{ e.amount | number }}</span>
+              </div>
+              <div class="exp-bar-wrap">
+                <div class="exp-bar" [style.width.%]="expBarPct(e.amount)" [style.background]="e.color"></div>
+              </div>
+            </div>
+            <div class="exp-row__meta">
+              <span class="exp-pct">{{ e.pct }}%</span>
+              <span class="exp-change"
+                [class.pos]="e.change < 0"
+                [class.neg]="e.change > 0">
+                {{ e.change > 0 ? '+' : '' }}{{ e.change }}%
+              </span>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+
+  </div>
+  }
+
+
+  <!-- ═══ CASH FLOW TAB ══════════════════════════════════════════════════ -->
+  @if(activeTab() === 'cashflow') {
+  <div class="cashflow-panel">
+
+    <!-- YTD Summary pills -->
+    <div class="ytd-pills">
+      <div class="ytd-pill">
+        <span class="ytd-pill__label">12M Revenue</span>
+        <span class="ytd-pill__val revenue">₹{{ (ytdRevenue / 100000) | number:'1.1-1' }}L</span>
+      </div>
+      <div class="ytd-pill">
+        <span class="ytd-pill__label">12M Purchases</span>
+        <span class="ytd-pill__val expense">₹{{ (ytdPurchase / 100000) | number:'1.1-1' }}L</span>
+      </div>
+      <div class="ytd-pill">
+        <span class="ytd-pill__label">12M Net Profit</span>
+        <span class="ytd-pill__val profit">₹{{ (ytdProfit / 100000) | number:'1.1-1' }}L</span>
+      </div>
+      <div class="ytd-pill">
+        <span class="ytd-pill__label">Avg Monthly Profit</span>
+        <span class="ytd-pill__val profit">₹{{ ((ytdProfit / 12) / 1000) | number:'1.0-0' }}K</span>
+      </div>
+    </div>
+
+    <!-- Monthly cash flow table -->
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Month</th>
+            <th>Revenue</th>
+            <th>Purchases</th>
+            <th>Overheads</th>
+            <th>Gross Profit</th>
+            <th>Gross Margin</th>
+            <th>Net Profit</th>
+            <th>Net Margin</th>
+            <th>Opening Cash</th>
+            <th>Closing Cash</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for(m of monthlyFlow; track m.month; let i = $index) {
+            <tr [class.current-month]="m.shortMonth === 'Jul'">
+              <td class="month-cell">
+                {{ m.month }}
+                @if(m.shortMonth === 'Jul') { <span class="current-tag">Current</span> }
+              </td>
+              <td class="amount revenue">₹{{ m.revenue | number }}</td>
+              <td class="amount expense">₹{{ m.purchases | number }}</td>
+              <td class="amount muted">₹{{ m.expenses | number }}</td>
+              <td class="amount profit">₹{{ m.grossProfit | number }}</td>
+              <td class="center">
+                <span class="margin-chip">
+                  {{ (m.grossProfit / m.revenue * 100) | number:'1.0-0' }}%
+                </span>
+              </td>
+              <td class="amount profit bold">₹{{ m.netProfit | number }}</td>
+              <td class="center">
+                <span class="margin-chip"
+                  [class.good]="marginPct(m) >= 25"
+                  [class.ok]="marginPct(m) >= 18 && marginPct(m) < 25"
+                  [class.low]="marginPct(m) < 18">
+                  {{ marginPct(m) }}%
+                </span>
+              </td>
+              <td class="amount muted">₹{{ m.openingCash | number }}</td>
+              <td class="amount cash">₹{{ m.closingCash | number }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+  }
+
+
+  <!-- ═══ TRANSACTIONS TAB ═══════════════════════════════════════════════ -->
+  @if(activeTab() === 'expenses') {
+  <div class="tx-panel">
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="toolbar__search">
+        <span class="material-symbols-outlined">search</span>
+        <input type="text" placeholder="Search description, category, reference…"
+          [value]="expenseSearch()"
+          (input)="expenseSearch.set($any($event.target).value)">
+        @if(expenseSearch()) {
+          <button class="clear-btn" (click)="expenseSearch.set('')">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        }
+      </div>
+      <div class="filter-pills">
+        @for(f of ['all','Income','Expense']; track f) {
+          <button class="pill" [class.active]="txTypeFilter() === f"
+            (click)="txTypeFilter.set($any(f))">
+            {{ f === 'all' ? 'All' : f }}
+          </button>
+        }
+      </div>
+      <div class="toolbar__summary">
+        <span class="summary-in">
+          <span class="material-symbols-outlined">arrow_downward</span>
+          ₹{{ filteredIncome() | number:'1.0-0' }}
+        </span>
+        <span class="summary-out">
+          <span class="material-symbols-outlined">arrow_upward</span>
+          ₹{{ filteredExpense() | number:'1.0-0' }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Transaction table -->
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Type</th>
+            <th>Category</th>
+            <th>Description</th>
+            <th>Mode</th>
+            <th>Reference</th>
+            <th>Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for(tx of filteredTx(); track tx.id) {
+            <tr [class.income-row]="tx.type === 'Income'" [class.expense-row]="tx.type === 'Expense'">
+              <td class="date-cell muted">{{ tx.date }}</td>
+              <td>
+                <span class="badge" [class]="txTypeClass(tx.type)">{{ tx.type }}</span>
+              </td>
+              <td class="category-cell">{{ tx.category }}</td>
+              <td class="desc-cell">{{ tx.description }}</td>
+              <td class="muted small">{{ tx.mode }}</td>
+              <td class="mono small">{{ tx.ref || '—' }}</td>
+              <td class="amount" [class.income-amount]="tx.type === 'Income'" [class.expense-amount]="tx.type === 'Expense'">
+                {{ tx.type === 'Income' ? '+' : '–' }} ₹{{ tx.amount | number }}
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if(filteredTx().length === 0) {
+      <div class="empty-state">
+        <span class="material-symbols-outlined">search_off</span>
+        <p>No transactions match your filters</p>
+      </div>
+    }
+
+  </div>
+  }
+
+</div>
+
+@if(toast()) {
+  <div class="toast">{{ toast() }}</div>
+}

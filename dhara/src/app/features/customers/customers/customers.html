@@ -1,0 +1,401 @@
+<div class="customers">
+
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <div class="page-header__left">
+      <h1 class="page-title">Customers (Khata)</h1>
+      <p class="page-subtitle">Manage credit accounts, outstanding dues and payment collection</p>
+    </div>
+    <div class="page-header__right">
+      <button class="btn btn--outline" (click)="showToast('Exporting customer data…')">
+        <span class="material-symbols-outlined">download</span> Export
+      </button>
+      <button class="btn btn--primary" (click)="showAddModal.set(true)">
+        <span class="material-symbols-outlined">person_add</span> Add Customer
+      </button>
+    </div>
+  </div>
+
+  <!-- KPI STATS -->
+  <div class="stats-row">
+    @for(s of stats; track s.label) {
+      <div class="stat-card">
+        <div class="stat-card__icon" [style.background]="s.color + '18'">
+          <span class="material-symbols-outlined" [style.color]="s.color">{{ s.icon }}</span>
+        </div>
+        <div>
+          <div class="stat-card__value">{{ s.value }}</div>
+          <div class="stat-card__label">{{ s.label }}</div>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- MAIN TWO-PANEL LAYOUT -->
+  <div class="khata-layout">
+
+    <!-- LEFT: Customer List -->
+    <div class="list-panel">
+
+      <!-- Search + Filters -->
+      <div class="list-toolbar">
+        <div class="list-search">
+          <span class="material-symbols-outlined">search</span>
+          <input type="text" placeholder="Search name, phone, area…"
+            [value]="search()" (input)="search.set($any($event.target).value)">
+          @if(search()) {
+            <button class="clear-btn" (click)="search.set('')">
+              <span class="material-symbols-outlined">close</span>
+            </button>
+          }
+        </div>
+        <div class="list-filters">
+          <select (change)="statusFilter.set($any($event.target).value)">
+            <option value="all">All Status</option>
+            <option value="Active">Active</option>
+            <option value="Inactive">Inactive</option>
+          </select>
+          <select (change)="sortBy.set($any($event.target).value)">
+            <option value="overdue">Sort: Overdue</option>
+            <option value="outstanding">Sort: Outstanding</option>
+            <option value="name">Sort: Name</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Count -->
+      <div class="list-count">
+        <span><strong>{{ filteredCustomers().length }}</strong> customers</span>
+      </div>
+
+      <!-- Customer rows -->
+      <div class="customer-list">
+        @for(c of filteredCustomers(); track c.id) {
+          <button class="customer-row" [class.active]="selectedId() === c.id"
+            (click)="selectCustomer(c.id)">
+            <div class="customer-row__avatar"
+              [style.background]="avatarColor(c.avatar) + '20'"
+              [style.color]="avatarColor(c.avatar)">
+              {{ initials(c.name) }}
+            </div>
+            <div class="customer-row__info">
+              <div class="customer-row__name">{{ c.name }}</div>
+              <div class="customer-row__meta">{{ c.phone }} · {{ c.area }}</div>
+            </div>
+            <div class="customer-row__right">
+              <div class="customer-row__amount" [class.high]="c.outstanding > 20000">
+                ₹{{ c.outstanding | number }}
+              </div>
+              <div class="overdue-tag" [class]="overdueClass(c.overduedays)">
+                {{ c.overduedays }}d
+              </div>
+            </div>
+          </button>
+        }
+        @if(filteredCustomers().length === 0) {
+          <div class="empty-list">
+            <span class="material-symbols-outlined">search_off</span>
+            <p>No customers found</p>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- RIGHT: Khata Detail -->
+    @if(selectedCustomer(); as c) {
+    <div class="detail-panel">
+
+      <!-- Customer profile card -->
+      <div class="profile-card">
+        <div class="profile-card__left">
+          <div class="profile-avatar"
+            [style.background]="avatarColor(c.avatar) + '20'"
+            [style.color]="avatarColor(c.avatar)">
+            {{ initials(c.name) }}
+          </div>
+          <div class="profile-info">
+            <h2 class="profile-name">{{ c.name }}</h2>
+            <div class="profile-meta">
+              <span><span class="material-symbols-outlined">phone</span>{{ c.phone }}</span>
+              <span><span class="material-symbols-outlined">location_on</span>{{ c.address }}, {{ c.area }}</span>
+              @if(c.gst) {
+                <span><span class="material-symbols-outlined">receipt</span>GST: {{ c.gst }}</span>
+              }
+              <span><span class="material-symbols-outlined">calendar_today</span>Since {{ c.joinDate }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="profile-card__right">
+          <div class="profile-badge" [class]="c.status === 'Active' ? 'active' : 'inactive'">
+            {{ c.status }}
+          </div>
+          <button class="btn btn--primary" (click)="openPaymentModal()">
+            <span class="material-symbols-outlined">payments</span> Record Payment
+          </button>
+          <button class="btn btn--outline" (click)="showToast('WhatsApp reminder sent to ' + c.name)">
+            <span class="material-symbols-outlined">send</span> Send Reminder
+          </button>
+        </div>
+      </div>
+
+      <!-- Summary metrics -->
+      <div class="metrics-row">
+        <div class="metric">
+          <span class="metric__label">Outstanding</span>
+          <span class="metric__value danger">₹{{ c.outstanding | number }}</span>
+        </div>
+        <div class="metric">
+          <span class="metric__label">Total Purchases</span>
+          <span class="metric__value">₹{{ c.totalPurchases | number }}</span>
+        </div>
+        <div class="metric">
+          <span class="metric__label">Total Paid</span>
+          <span class="metric__value success">₹{{ c.totalPaid | number }}</span>
+        </div>
+        <div class="metric">
+          <span class="metric__label">Overdue Since</span>
+          <span class="metric__value" [class.danger]="c.overduedays > 30">{{ c.overduedays }} days</span>
+        </div>
+        <div class="metric metric--wide">
+          <span class="metric__label">
+            Credit Limit — ₹{{ c.creditLimit | number }}
+            <span class="credit-pct" [class.over]="creditUsedPercent(c) >= 90">
+              {{ creditUsedPercent(c) }}% used
+            </span>
+          </span>
+          <div class="credit-bar">
+            <div class="credit-bar__fill"
+              [style.width.%]="creditUsedPercent(c)"
+              [class.warning]="creditUsedPercent(c) >= 70"
+              [class.danger]="creditUsedPercent(c) >= 90">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ledger -->
+      <div class="ledger-section">
+        <div class="ledger-header">
+          <h3>Khata Ledger</h3>
+          <span class="ledger-count">{{ ledger().length }} entries</span>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Description</th>
+                <th>Invoice</th>
+                <th>Debit (Dr)</th>
+                <th>Credit (Cr)</th>
+                <th>Balance</th>
+                <th>Mode</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for(entry of ledger(); track entry.id) {
+                <tr [class.payment-row]="entry.type === 'Payment'">
+                  <td class="date-cell">
+                    <div>{{ entry.date }}</div>
+                    <div class="time">{{ entry.time }}</div>
+                  </td>
+                  <td>
+                    <span class="badge" [class]="entryTypeClass(entry.type)">
+                      {{ entry.type }}
+                    </span>
+                  </td>
+                  <td class="desc-cell">
+                    {{ entry.description }}
+                    @if(entry.notes) {
+                      <div class="entry-notes">{{ entry.notes }}</div>
+                    }
+                  </td>
+                  <td class="mono">{{ entry.invoice ?? '—' }}</td>
+                  <td class="amount debit">
+                    {{ entry.debit > 0 ? ('₹' + (entry.debit | number)) : '—' }}
+                  </td>
+                  <td class="amount credit">
+                    {{ entry.credit > 0 ? ('₹' + (entry.credit | number)) : '—' }}
+                  </td>
+                  <td class="amount balance">₹{{ entry.balance | number }}</td>
+                  <td class="muted small">
+                    @if(entry.paymentMode) {
+                      <span class="mode-chip">{{ entry.paymentMode }}</span>
+                    } @else {
+                      <span>—</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        @if(ledger().length === 0) {
+          <div class="empty-ledger">
+            <span class="material-symbols-outlined">receipt_long</span>
+            <p>No ledger entries yet for this customer</p>
+          </div>
+        }
+      </div>
+
+    </div>
+    }
+
+  </div>
+</div>
+
+
+<!-- ══ RECORD PAYMENT MODAL ══════════════════════════════════════════════════ -->
+@if(showPaymentModal()) {
+  <div class="modal-backdrop" (click)="showPaymentModal.set(false)">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal__header">
+        <h2 class="modal__title">
+          <span class="material-symbols-outlined">payments</span>
+          Record Payment
+        </h2>
+        <button class="modal__close" (click)="showPaymentModal.set(false)">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="modal__body">
+
+        @if(selectedCustomer(); as c) {
+          <div class="pay-customer-info">
+            <div class="pay-avatar"
+              [style.background]="avatarColor(c.avatar) + '20'"
+              [style.color]="avatarColor(c.avatar)">
+              {{ initials(c.name) }}
+            </div>
+            <div>
+              <div class="pay-name">{{ c.name }}</div>
+              <div class="pay-phone">{{ c.phone }}</div>
+            </div>
+            <div class="pay-outstanding">
+              <span class="pay-outstanding__label">Outstanding</span>
+              <span class="pay-outstanding__value">₹{{ c.outstanding | number }}</span>
+            </div>
+          </div>
+        }
+
+        <div class="form-row">
+          <div class="form-group form-group--lg">
+            <label>Amount (₹) <span class="req">*</span></label>
+            <input type="number" min="0" placeholder="0"
+              [value]="payAmount()"
+              (input)="payAmount.set(+$any($event.target).value)">
+          </div>
+          <div class="form-group">
+            <label>Payment Mode</label>
+            <select [value]="payMode()" (change)="payMode.set($any($event.target).value)">
+              @for(m of paymentModes; track m) {
+                <option [value]="m">{{ m }}</option>
+              }
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Notes (optional)</label>
+          <input type="text" placeholder="e.g. Cheque no. 441210, NEFT ref…"
+            [value]="payNotes()" (input)="payNotes.set($any($event.target).value)">
+        </div>
+
+        <!-- Quick amount chips -->
+        @if(selectedCustomer(); as c) {
+          <div class="quick-amounts">
+            <span class="quick-amounts__label">Quick:</span>
+            @for(pct of [25, 50, 75, 100]; track pct) {
+              <button class="quick-chip"
+                (click)="payAmount.set(Math.round(c.outstanding * pct / 100))">
+                {{ pct }}%
+              </button>
+            }
+          </div>
+        }
+
+      </div>
+      <div class="modal__footer">
+        <button class="btn btn--outline" (click)="showPaymentModal.set(false)">Cancel</button>
+        <button class="btn btn--primary" (click)="recordPayment()">
+          <span class="material-symbols-outlined">check_circle</span> Record Payment
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+
+<!-- ══ ADD CUSTOMER MODAL ═════════════════════════════════════════════════════-->
+@if(showAddModal()) {
+  <div class="modal-backdrop" (click)="showAddModal.set(false)">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal__header">
+        <h2 class="modal__title">
+          <span class="material-symbols-outlined">person_add</span>
+          Add New Customer
+        </h2>
+        <button class="modal__close" (click)="showAddModal.set(false)">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="modal__body">
+
+        <div class="form-row">
+          <div class="form-group form-group--lg">
+            <label>Full Name <span class="req">*</span></label>
+            <input type="text" placeholder="e.g. Ramesh Patil"
+              [value]="addName()" (input)="addName.set($any($event.target).value)">
+          </div>
+          <div class="form-group">
+            <label>Phone <span class="req">*</span></label>
+            <input type="text" placeholder="9XXXXXXXXX"
+              [value]="addPhone()" (input)="addPhone.set($any($event.target).value)">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group form-group--lg">
+            <label>Address</label>
+            <input type="text" placeholder="Plot / Flat / Building"
+              [value]="addAddress()" (input)="addAddress.set($any($event.target).value)">
+          </div>
+          <div class="form-group">
+            <label>Area / City</label>
+            <input type="text" placeholder="e.g. Nashik"
+              [value]="addArea()" (input)="addArea.set($any($event.target).value)">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>GST Number</label>
+            <input type="text" placeholder="27XXXXX (optional)"
+              [value]="addGst()" (input)="addGst.set($any($event.target).value)">
+          </div>
+          <div class="form-group">
+            <label>Credit Limit (₹)</label>
+            <input type="number" min="0"
+              [value]="addCreditLimit()"
+              (input)="addCreditLimit.set(+$any($event.target).value)">
+          </div>
+        </div>
+
+      </div>
+      <div class="modal__footer">
+        <button class="btn btn--outline" (click)="showAddModal.set(false)">Cancel</button>
+        <button class="btn btn--primary" (click)="saveCustomer()">
+          <span class="material-symbols-outlined">save</span> Add Customer
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+
+@if(toast()) {
+  <div class="toast">{{ toast() }}</div>
+}

@@ -1,0 +1,432 @@
+<div class="suppliers">
+
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <div class="page-header__left">
+      <h1 class="page-title">Suppliers</h1>
+      <p class="page-subtitle">Manage supplier profiles, payment dues and purchase history</p>
+    </div>
+    <div class="page-header__right">
+      <button class="btn btn--outline" (click)="showToast('Exporting supplier data…')">
+        <span class="material-symbols-outlined">download</span> Export
+      </button>
+      <button class="btn btn--primary" (click)="showAddModal.set(true)">
+        <span class="material-symbols-outlined">add_business</span> Add Supplier
+      </button>
+    </div>
+  </div>
+
+  <!-- KPI STATS -->
+  <div class="stats-row">
+    @for(s of stats; track s.label) {
+      <div class="stat-card">
+        <div class="stat-card__icon" [style.background]="s.color + '18'">
+          <span class="material-symbols-outlined" [style.color]="s.color">{{ s.icon }}</span>
+        </div>
+        <div>
+          <div class="stat-card__value">{{ s.value }}</div>
+          <div class="stat-card__label">{{ s.label }}</div>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- MAIN TWO-PANEL LAYOUT -->
+  <div class="sup-layout">
+
+    <!-- LEFT: Supplier List -->
+    <div class="list-panel">
+
+      <!-- Search + Filters -->
+      <div class="list-toolbar">
+        <div class="list-search">
+          <span class="material-symbols-outlined">search</span>
+          <input type="text" placeholder="Name, phone, GST, area…"
+            [value]="search()" (input)="search.set($any($event.target).value)">
+          @if(search()) {
+            <button class="clear-btn" (click)="search.set('')">
+              <span class="material-symbols-outlined">close</span>
+            </button>
+          }
+        </div>
+        <div class="list-filters">
+          <select (change)="statusFilter.set($any($event.target).value)">
+            <option value="all">All Status</option>
+            <option value="Active">Active</option>
+            <option value="Inactive">Inactive</option>
+          </select>
+          <select (change)="sortBy.set($any($event.target).value)">
+            <option value="outstanding">Sort: Dues</option>
+            <option value="orders">Sort: Orders</option>
+            <option value="name">Sort: Name</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="list-count">
+        <strong>{{ filteredSuppliers().length }}</strong> suppliers
+      </div>
+
+      <div class="supplier-list">
+        @for(s of filteredSuppliers(); track s.id) {
+          <button class="supplier-row" [class.active]="selectedId() === s.id"
+            (click)="selectSupplier(s.id)">
+            <div class="supplier-row__avatar"
+              [style.background]="avatarColor(s.avatar) + '20'"
+              [style.color]="avatarColor(s.avatar)">
+              {{ initials(s.name) }}
+            </div>
+            <div class="supplier-row__info">
+              <div class="supplier-row__name">{{ s.name }}</div>
+              <div class="supplier-row__meta">{{ s.contactPerson }} · {{ s.area }}</div>
+            </div>
+            <div class="supplier-row__right">
+              <div class="supplier-row__due" [class.high]="s.outstanding > 30000">
+                ₹{{ s.outstanding | number }}
+              </div>
+              <div class="orders-tag">{{ s.totalOrders }} orders</div>
+            </div>
+          </button>
+        }
+        @if(filteredSuppliers().length === 0) {
+          <div class="empty-list">
+            <span class="material-symbols-outlined">search_off</span>
+            <p>No suppliers found</p>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- RIGHT: Supplier Detail -->
+    @if(selected(); as s) {
+    <div class="detail-panel">
+
+      <!-- Profile card -->
+      <div class="profile-card">
+        <div class="profile-card__left">
+          <div class="profile-avatar"
+            [style.background]="avatarColor(s.avatar) + '20'"
+            [style.color]="avatarColor(s.avatar)">
+            {{ initials(s.name) }}
+          </div>
+          <div class="profile-info">
+            <h2 class="profile-name">{{ s.name }}</h2>
+            <div class="profile-rating">
+              @for(star of stars(s.rating); track $index) {
+                <span class="material-symbols-outlined star">star</span>
+              }
+              @for(star of stars(5 - s.rating); track $index) {
+                <span class="material-symbols-outlined star empty">star</span>
+              }
+              <span class="rating-num">{{ s.rating }}/5</span>
+            </div>
+            <div class="profile-meta">
+              <span><span class="material-symbols-outlined">person</span>{{ s.contactPerson }}</span>
+              <span><span class="material-symbols-outlined">phone</span>{{ s.phone }}
+                @if(s.altPhone) { · {{ s.altPhone }} }
+              </span>
+              @if(s.email) {
+                <span><span class="material-symbols-outlined">mail</span>{{ s.email }}</span>
+              }
+              <span><span class="material-symbols-outlined">location_on</span>{{ s.address }}, {{ s.area }}, {{ s.state }}</span>
+              <span><span class="material-symbols-outlined">receipt</span>GST: {{ s.gst }}</span>
+              @if(s.pan) {
+                <span><span class="material-symbols-outlined">badge</span>PAN: {{ s.pan }}</span>
+              }
+              <span><span class="material-symbols-outlined">calendar_today</span>Since {{ s.joinDate }} · Last order {{ s.lastOrder }}</span>
+            </div>
+            <div class="category-chips">
+              @for(cat of s.categories; track cat) {
+                <span class="cat-chip">{{ cat }}</span>
+              }
+            </div>
+          </div>
+        </div>
+        <div class="profile-card__right">
+          <div class="profile-status" [class]="s.status === 'Active' ? 'active' : 'inactive'">
+            {{ s.status }}
+          </div>
+          <button class="btn btn--primary" (click)="openPayModal()">
+            <span class="material-symbols-outlined">payments</span> Pay Supplier
+          </button>
+          <button class="btn btn--outline" (click)="showToast('Opening purchase order for ' + s.name)">
+            <span class="material-symbols-outlined">add_shopping_cart</span> New Order
+          </button>
+        </div>
+      </div>
+
+      <!-- Metrics row -->
+      <div class="metrics-row">
+        <div class="metric">
+          <span class="metric__label">Outstanding Dues</span>
+          <span class="metric__value danger">₹{{ s.outstanding | number }}</span>
+        </div>
+        <div class="metric">
+          <span class="metric__label">Total Purchases</span>
+          <span class="metric__value">₹{{ s.totalPurchases | number }}</span>
+        </div>
+        <div class="metric">
+          <span class="metric__label">Total Paid</span>
+          <span class="metric__value success">₹{{ s.totalPaid | number }}</span>
+        </div>
+        <div class="metric">
+          <span class="metric__label">Total Orders</span>
+          <span class="metric__value">{{ s.totalOrders }}</span>
+        </div>
+        <div class="metric metric--wide">
+          <span class="metric__label">
+            Credit Limit — ₹{{ s.creditLimit | number }}
+            <span class="credit-pct" [class.over]="creditUsedPercent(s) >= 90">
+              {{ creditUsedPercent(s) }}% used
+            </span>
+          </span>
+          <div class="credit-bar">
+            <div class="credit-bar__fill"
+              [style.width.%]="creditUsedPercent(s)"
+              [class.warning]="creditUsedPercent(s) >= 70"
+              [class.danger]="creditUsedPercent(s) >= 90">
+            </div>
+          </div>
+        </div>
+        <div class="metric">
+          <span class="metric__label">Payment Terms</span>
+          <span class="metric__value" [class]="daysClass(s.creditDays)">{{ s.creditDays }} days</span>
+        </div>
+      </div>
+
+      <!-- Ledger / transaction history -->
+      <div class="ledger-section">
+        <div class="ledger-header">
+          <h3>Transaction Ledger</h3>
+          <span class="ledger-count">{{ ledger().length }} entries</span>
+        </div>
+
+        @if(ledger().length > 0) {
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Type</th>
+                  <th>Description</th>
+                  <th>PO / Ref</th>
+                  <th>Debit (Dr)</th>
+                  <th>Credit (Cr)</th>
+                  <th>Balance</th>
+                  <th>Mode</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for(tx of ledger(); track tx.id) {
+                  <tr [class.payment-row]="tx.type === 'Payment'">
+                    <td class="date-cell">
+                      <div>{{ tx.date }}</div>
+                      <div class="time">{{ tx.time }}</div>
+                    </td>
+                    <td>
+                      <span class="badge" [class]="txTypeClass(tx.type)">{{ tx.type }}</span>
+                    </td>
+                    <td class="desc-cell">
+                      {{ tx.description }}
+                      @if(tx.notes) { <div class="tx-notes">{{ tx.notes }}</div> }
+                    </td>
+                    <td class="mono">
+                      <div>{{ tx.poNumber ?? '—' }}</div>
+                      @if(tx.invoiceRef) { <div class="ref">{{ tx.invoiceRef }}</div> }
+                    </td>
+                    <td class="amount debit">
+                      {{ tx.debit > 0 ? ('₹' + (tx.debit | number)) : '—' }}
+                    </td>
+                    <td class="amount credit">
+                      {{ tx.credit > 0 ? ('₹' + (tx.credit | number)) : '—' }}
+                    </td>
+                    <td class="amount balance" [class.negative]="tx.balance < 0">
+                      ₹{{ (tx.balance < 0 ? -tx.balance : tx.balance) | number }}
+                      @if(tx.balance < 0) { <span class="advance-tag">Adv</span> }
+                    </td>
+                    <td class="muted small">
+                      @if(tx.paymentMode) {
+                        <span class="mode-chip">{{ tx.paymentMode }}</span>
+                      } @else { — }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <div class="empty-ledger">
+            <span class="material-symbols-outlined">receipt_long</span>
+            <p>No transactions yet for this supplier</p>
+          </div>
+        }
+      </div>
+
+    </div>
+    }
+
+  </div>
+</div>
+
+
+<!-- ══ PAY SUPPLIER MODAL ══════════════════════════════════════════════════ -->
+@if(showPayModal() && selected(); as s) {
+  <div class="modal-backdrop" (click)="showPayModal.set(false)">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal__header">
+        <h2 class="modal__title">
+          <span class="material-symbols-outlined">payments</span> Pay Supplier
+        </h2>
+        <button class="modal__close" (click)="showPayModal.set(false)">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="modal__body">
+        <div class="pay-info-row">
+          <div class="pay-avatar"
+            [style.background]="avatarColor(s.avatar) + '20'"
+            [style.color]="avatarColor(s.avatar)">
+            {{ initials(s.name) }}
+          </div>
+          <div>
+            <div class="pay-name">{{ s.name }}</div>
+            <div class="pay-contact">{{ s.contactPerson }} · {{ s.phone }}</div>
+          </div>
+          <div class="pay-due-box">
+            <span class="pay-due-label">Outstanding</span>
+            <span class="pay-due-val">₹{{ s.outstanding | number }}</span>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group form-group--lg">
+            <label>Amount (₹) <span class="req">*</span></label>
+            <input type="number" min="0"
+              [value]="payAmount()"
+              (input)="payAmount.set(+$any($event.target).value)">
+          </div>
+          <div class="form-group">
+            <label>Payment Mode</label>
+            <select [value]="payMode()" (change)="payMode.set($any($event.target).value)">
+              @for(m of paymentModes; track m) {
+                <option [value]="m">{{ m }}</option>
+              }
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Reference / Cheque No.</label>
+          <input type="text" placeholder="e.g. NEFT ref, SBI Cheque #…"
+            [value]="payRef()" (input)="payRef.set($any($event.target).value)">
+        </div>
+
+        <div class="quick-amounts">
+          <span class="quick-label">Quick:</span>
+          @for(pct of [25, 50, 75, 100]; track pct) {
+            <button class="quick-chip"
+              (click)="payAmount.set(Math.round(s.outstanding * pct / 100))">
+              {{ pct }}%
+            </button>
+          }
+        </div>
+      </div>
+      <div class="modal__footer">
+        <button class="btn btn--outline" (click)="showPayModal.set(false)">Cancel</button>
+        <button class="btn btn--primary" (click)="recordPayment()">
+          <span class="material-symbols-outlined">check_circle</span> Record Payment
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+
+<!-- ══ ADD SUPPLIER MODAL ══════════════════════════════════════════════════ -->
+@if(showAddModal()) {
+  <div class="modal-backdrop" (click)="showAddModal.set(false)">
+    <div class="modal modal--wide" (click)="$event.stopPropagation()">
+      <div class="modal__header">
+        <h2 class="modal__title">
+          <span class="material-symbols-outlined">add_business</span> Add New Supplier
+        </h2>
+        <button class="modal__close" (click)="showAddModal.set(false)">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="modal__body">
+
+        <div class="form-row">
+          <div class="form-group form-group--lg">
+            <label>Supplier / Company Name <span class="req">*</span></label>
+            <input type="text" placeholder="e.g. Supreme Industries Ltd"
+              [value]="addName()" (input)="addName.set($any($event.target).value)">
+          </div>
+          <div class="form-group">
+            <label>Contact Person</label>
+            <input type="text" placeholder="e.g. Rahul Mehta"
+              [value]="addContact()" (input)="addContact.set($any($event.target).value)">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Phone <span class="req">*</span></label>
+            <input type="text" placeholder="9XXXXXXXXX"
+              [value]="addPhone()" (input)="addPhone.set($any($event.target).value)">
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" placeholder="supplier@example.com"
+              [value]="addEmail()" (input)="addEmail.set($any($event.target).value)">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group form-group--lg">
+            <label>Address</label>
+            <input type="text" placeholder="Plot / Building, Area"
+              [value]="addAddress()" (input)="addAddress.set($any($event.target).value)">
+          </div>
+          <div class="form-group">
+            <label>City / Area</label>
+            <input type="text" placeholder="e.g. Nashik"
+              [value]="addArea()" (input)="addArea.set($any($event.target).value)">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>GST Number</label>
+            <input type="text" placeholder="27XXXXX…"
+              [value]="addGst()" (input)="addGst.set($any($event.target).value)">
+          </div>
+          <div class="form-group">
+            <label>Credit Days</label>
+            <input type="number" min="0" placeholder="30"
+              [value]="addCreditDays()"
+              (input)="addCreditDays.set(+$any($event.target).value)">
+          </div>
+          <div class="form-group">
+            <label>Credit Limit (₹)</label>
+            <input type="number" min="0" placeholder="500000"
+              [value]="addCreditLimit()"
+              (input)="addCreditLimit.set(+$any($event.target).value)">
+          </div>
+        </div>
+
+      </div>
+      <div class="modal__footer">
+        <button class="btn btn--outline" (click)="showAddModal.set(false)">Cancel</button>
+        <button class="btn btn--primary" (click)="saveSupplier()">
+          <span class="material-symbols-outlined">save</span> Add Supplier
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+
+@if(toast()) {
+  <div class="toast">{{ toast() }}</div>
+}

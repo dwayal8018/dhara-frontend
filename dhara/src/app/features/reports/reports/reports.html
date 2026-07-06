@@ -1,0 +1,399 @@
+<div class="reports">
+
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <div class="page-header__left">
+      <h1 class="page-title">Reports</h1>
+      <p class="page-subtitle">Business analytics and performance insights — July 2026</p>
+    </div>
+    <div class="page-header__right">
+      <div class="tab-toggle">
+        <button [class.active]="activeTab() === 'sales'"     (click)="activeTab.set('sales')">
+          <span class="material-symbols-outlined">bar_chart</span> Sales
+        </button>
+        <button [class.active]="activeTab() === 'products'"  (click)="activeTab.set('products')">
+          <span class="material-symbols-outlined">inventory_2</span> Products
+        </button>
+        <button [class.active]="activeTab() === 'customers'" (click)="activeTab.set('customers')">
+          <span class="material-symbols-outlined">people</span> Customers
+        </button>
+        <button [class.active]="activeTab() === 'stock'"     (click)="activeTab.set('stock')">
+          <span class="material-symbols-outlined">warning</span> Stock Alerts
+        </button>
+      </div>
+      <button class="btn btn--outline" (click)="showToast('Exporting report…')">
+        <span class="material-symbols-outlined">download</span> Export
+      </button>
+    </div>
+  </div>
+
+  <!-- KPI STATS (always visible) -->
+  <div class="stats-row">
+    @for(s of stats; track s.label) {
+      <div class="stat-card">
+        <div class="stat-card__top">
+          <div class="stat-card__icon" [style.background]="s.color + '18'">
+            <span class="material-symbols-outlined" [style.color]="s.color">{{ s.icon }}</span>
+          </div>
+          <span class="trend-badge" [class.up]="s.trend === 'up'" [class.down]="s.trend === 'down'">
+            {{ s.trend === 'up' ? '↑' : '↓' }} {{ s.change }}%
+          </span>
+        </div>
+        <div class="stat-card__value">{{ s.value }}</div>
+        <div class="stat-card__label">{{ s.label }}</div>
+      </div>
+    }
+  </div>
+
+
+  <!-- ═══ SALES TAB ══════════════════════════════════════════════════════ -->
+  @if(activeTab() === 'sales') {
+  <div class="sales-panel">
+
+    <!-- Daily sales bar chart -->
+    <div class="panel-card">
+      <div class="panel-card__header">
+        <h3>Daily Sales — July 2026</h3>
+        <div class="header-meta">
+          <span class="meta-chip">{{ totalDailyOrds }} orders</span>
+          <span class="meta-chip primary">₹{{ totalDailyRev | number }}</span>
+        </div>
+      </div>
+      <div class="daily-chart">
+        @for(d of dailySales; track d.day) {
+          <div class="day-col">
+            <div class="day-bars">
+              <div class="day-val">₹{{ (d.revenue / 1000) | number:'1.0-0' }}K</div>
+              <div class="day-bar-wrap">
+                <div class="day-bar revenue" [style.height.%]="dayBarPct(d.revenue)"
+                  [title]="'Revenue: ₹' + (d.revenue | number)"></div>
+                <div class="day-bar profit"  [style.height.%]="dayBarPct(d.profit)"
+                  [title]="'Profit: ₹' + (d.profit | number)"></div>
+              </div>
+            </div>
+            <div class="day-label">
+              <div>{{ d.date }}</div>
+              <div class="day-orders">{{ d.orders }} bills</div>
+            </div>
+          </div>
+        }
+      </div>
+      <div class="chart-legend-row">
+        <span class="legend-item"><span class="dot revenue"></span> Revenue</span>
+        <span class="legend-item"><span class="dot profit"></span> Profit</span>
+      </div>
+    </div>
+
+    <!-- 2-col: Category + Payment split -->
+    <div class="two-col">
+
+      <!-- Category sales -->
+      <div class="panel-card">
+        <div class="panel-card__header">
+          <h3>Sales by Category</h3>
+          <span class="muted-text">₹{{ catTotalRevenue | number }}</span>
+        </div>
+        <div class="cat-breakdown">
+          @for(c of categorySales; track c.category) {
+            <div class="cat-row">
+              <div class="cat-row__icon" [style.background]="c.color + '18'">
+                <span class="material-symbols-outlined" [style.color]="c.color">{{ c.icon }}</span>
+              </div>
+              <div class="cat-row__info">
+                <div class="cat-row__top">
+                  <span class="cat-name">{{ c.category }}</span>
+                  <span class="cat-revenue">₹{{ c.revenue | number }}</span>
+                </div>
+                <div class="cat-bar-wrap">
+                  <div class="cat-bar" [style.width.%]="catBarPct(c.revenue)" [style.background]="c.color"></div>
+                </div>
+                <div class="cat-meta">
+                  <span>{{ c.units }} units</span>
+                  <span class="sep">·</span>
+                  <span>{{ c.margin }}% margin</span>
+                  <span class="sep">·</span>
+                  <span class="pct-chip">{{ c.pct }}%</span>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Payment mode split -->
+      <div class="panel-card">
+        <div class="panel-card__header">
+          <h3>Payment Mode Split</h3>
+          <span class="muted-text">Jul 2026</span>
+        </div>
+
+        <!-- Donut-style visual using stacked bars -->
+        <div class="payment-visual">
+          <div class="payment-bar-track">
+            @for(p of paymentSplit; track p.mode) {
+              <div class="payment-segment"
+                [style.width.%]="p.pct"
+                [style.background]="p.color"
+                [title]="p.mode + ': ' + p.pct + '%'">
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="payment-list">
+          @for(p of paymentSplit; track p.mode) {
+            <div class="payment-row">
+              <div class="payment-row__left">
+                <div class="payment-icon" [style.background]="p.color + '18'">
+                  <span class="material-symbols-outlined" [style.color]="p.color">{{ p.icon }}</span>
+                </div>
+                <span class="payment-mode">{{ p.mode }}</span>
+              </div>
+              <div class="payment-row__right">
+                <span class="payment-amount">₹{{ p.amount | number }}</span>
+                <span class="payment-pct" [style.color]="p.color">{{ p.pct }}%</span>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+  }
+
+
+  <!-- ═══ PRODUCTS TAB ═══════════════════════════════════════════════════ -->
+  @if(activeTab() === 'products') {
+  <div class="products-panel">
+
+    <div class="toolbar">
+      <div class="toolbar__search">
+        <span class="material-symbols-outlined">search</span>
+        <input type="text" placeholder="Search product name, SKU, category…"
+          [value]="productSearch()"
+          (input)="productSearch.set($any($event.target).value)">
+        @if(productSearch()) {
+          <button class="clear-btn" (click)="productSearch.set('')">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        }
+      </div>
+      <div class="sort-pills">
+        <span class="sort-label">Sort by:</span>
+        @for(opt of [['revenue','Revenue'],['units','Units Sold'],['profit','Profit'],['margin','Margin']] ; track opt[0]) {
+          <button class="pill" [class.active]="productSortBy() === opt[0]"
+            (click)="productSortBy.set($any(opt[0]))">{{ opt[1] }}</button>
+        }
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>SKU</th>
+            <th>Product</th>
+            <th>Category</th>
+            <th>Units Sold</th>
+            <th>Revenue</th>
+            <th>Profit</th>
+            <th>Margin</th>
+            <th>Stock</th>
+            <th>Trend</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for(p of filteredProducts(); track p.rank) {
+            <tr>
+              <td class="rank">{{ p.rank }}</td>
+              <td class="mono">{{ p.sku }}</td>
+              <td class="name-cell">{{ p.name }}</td>
+              <td class="muted">{{ p.category }}</td>
+              <td class="center bold">{{ p.unitsSold }}</td>
+              <td class="amount">₹{{ p.revenue | number }}</td>
+              <td class="amount profit">₹{{ p.profit | number }}</td>
+              <td class="center">
+                <span class="margin-chip"
+                  [class.good]="p.margin >= 25"
+                  [class.ok]="p.margin >= 18 && p.margin < 25"
+                  [class.low]="p.margin < 18">{{ p.margin }}%</span>
+              </td>
+              <td class="center" [class.low-stock]="p.stock <= 5">{{ p.stock }}</td>
+              <td class="center">
+                <span class="trend-icon" [class]="trendClass(p.trend)">
+                  <span class="material-symbols-outlined">{{ trendIcon(p.trend) }}</span>
+                </span>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+  }
+
+
+  <!-- ═══ CUSTOMERS TAB ══════════════════════════════════════════════════ -->
+  @if(activeTab() === 'customers') {
+  <div class="customers-panel">
+
+    <div class="toolbar">
+      <div class="toolbar__search">
+        <span class="material-symbols-outlined">search</span>
+        <input type="text" placeholder="Search customer, area, phone…"
+          [value]="customerSearch()"
+          (input)="customerSearch.set($any($event.target).value)">
+        @if(customerSearch()) {
+          <button class="clear-btn" (click)="customerSearch.set('')">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        }
+      </div>
+      <div class="sort-pills">
+        <span class="sort-label">Sort by:</span>
+        @for(opt of [['purchases','Purchases'],['invoices','Invoices'],['outstanding','Outstanding'],['avgBill','Avg Bill']]; track opt[0]) {
+          <button class="pill" [class.active]="customerSortBy() === opt[0]"
+            (click)="customerSortBy.set($any(opt[0]))">{{ opt[1] }}</button>
+        }
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Customer</th>
+            <th>Area</th>
+            <th>Total Purchases</th>
+            <th>Invoices</th>
+            <th>Avg Bill</th>
+            <th>Outstanding</th>
+            <th>Last Visit</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for(c of filteredCustomers(); track c.rank) {
+            <tr>
+              <td class="rank">{{ c.rank }}</td>
+              <td>
+                <div class="cust-cell">
+                  <div class="cust-avatar"
+                    [style.background]="avatarColor(c.avatar) + '20'"
+                    [style.color]="avatarColor(c.avatar)">
+                    {{ initials(c.name) }}
+                  </div>
+                  <div>
+                    <div class="cust-name">{{ c.name }}</div>
+                    <div class="cust-phone">{{ c.phone }}</div>
+                  </div>
+                </div>
+              </td>
+              <td class="muted">{{ c.area }}</td>
+              <td class="amount bold">₹{{ c.totalPurchases | number }}</td>
+              <td class="center">{{ c.invoices }}</td>
+              <td class="amount">₹{{ c.avgBill | number }}</td>
+              <td class="amount" [class.outstanding]="c.outstanding > 0">
+                {{ c.outstanding > 0 ? ('₹' + (c.outstanding | number)) : '—' }}
+              </td>
+              <td class="muted small">{{ c.lastVisit }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+  }
+
+
+  <!-- ═══ STOCK ALERTS TAB ════════════════════════════════════════════════ -->
+  @if(activeTab() === 'stock') {
+  <div class="stock-panel">
+
+    <!-- Alert summary -->
+    <div class="alert-summary">
+      <div class="alert-pill danger">
+        <span class="material-symbols-outlined">error</span>
+        <span>{{ criticalCount }} Critical</span>
+      </div>
+      <div class="alert-pill warning">
+        <span class="material-symbols-outlined">warning</span>
+        <span>{{ lowCount }} Low Stock</span>
+      </div>
+      <div class="alert-pill info">
+        <span class="material-symbols-outlined">currency_rupee</span>
+        <span>Reorder Value: ₹{{ totalReorderValue | number }}</span>
+      </div>
+      <div class="alert-filters">
+        @for(f of ['all','Critical','Low']; track f) {
+          <button class="pill" [class.active]="stockFilter() === f"
+            (click)="stockFilter.set($any(f))">
+            {{ f === 'all' ? 'All' : f }}
+          </button>
+        }
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Status</th>
+            <th>SKU</th>
+            <th>Product</th>
+            <th>Category</th>
+            <th>Stock</th>
+            <th>Min</th>
+            <th>Stock Level</th>
+            <th>Days Left</th>
+            <th>Reorder Qty</th>
+            <th>Last Rate</th>
+            <th>Reorder Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for(a of filteredAlerts(); track a.sku) {
+            <tr [class.critical-row]="a.status === 'Critical'" [class.low-row]="a.status === 'Low'">
+              <td>
+                <span class="badge" [class]="alertClass(a.status)">{{ a.status }}</span>
+              </td>
+              <td class="mono">{{ a.sku }}</td>
+              <td class="name-cell">{{ a.name }}</td>
+              <td class="muted">{{ a.category }}</td>
+              <td class="center bold" [class.critical-val]="a.status === 'Critical'">{{ a.stock }}</td>
+              <td class="center muted">{{ a.minStock }}</td>
+              <td>
+                <div class="stock-bar-wrap">
+                  <div class="stock-bar"
+                    [style.width.%]="stockPct(a.stock, a.minStock)"
+                    [class.critical]="a.status === 'Critical'"
+                    [class.low]="a.status === 'Low'">
+                  </div>
+                </div>
+                <div class="stock-bar-label">{{ stockPct(a.stock, a.minStock) }}% of min</div>
+              </td>
+              <td class="center" [class.days-critical]="a.daysLeft <= 5">
+                {{ a.daysLeft }}d
+              </td>
+              <td class="center">{{ a.reorderQty }}</td>
+              <td class="muted">₹{{ a.lastPurchaseRate | number }}</td>
+              <td class="amount bold">₹{{ a.reorderValue | number }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+  }
+
+</div>
+
+@if(toast()) {
+  <div class="toast">{{ toast() }}</div>
+}
