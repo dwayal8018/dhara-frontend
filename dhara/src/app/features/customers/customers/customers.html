@@ -16,6 +16,17 @@
     </div>
   </div>
 
+  <!-- Deep-link banner (when arriving from Dashboard borrowers) -->
+  @if(deepLinked()) {
+    <div class="deeplink-banner">
+      <span class="material-symbols-outlined">arrow_back</span>
+      <span>Opened from Dashboard — showing <strong>{{ selectedCustomer().name }}</strong>'s balance sheet</span>
+      <button class="deeplink-dismiss" (click)="deepLinked.set(false)">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+  }
+
   <!-- KPI STATS -->
   <div class="stats-row">
     @for(s of stats; track s.label) {

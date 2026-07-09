@@ -13,12 +13,12 @@
   </section>
 
 
-  <!-- KPI CARDS -->
+  <!-- KPI CARDS — clickable -->
   <section class="stats">
     @for(card of stats; track card.id) {
-      <div class="stat-card">
+      <button class="stat-card" (click)="onCardClick(card.id)" title="Click to explore {{ card.title }}">
         <div class="stat-card__top">
-          <div class="stat-card__icon" [style.background]="card.color + '20'" >
+          <div class="stat-card__icon" [style.background]="card.color + '20'">
             <span class="material-symbols-outlined" [style.color]="card.color">{{ card.icon }}</span>
           </div>
           <span class="trend" [class.up]="card.trend === 'up'" [class.down]="card.trend === 'down'">
@@ -28,7 +28,10 @@
         </div>
         <p class="stat-card__label">{{ card.title }}</p>
         <h2 class="stat-card__value">{{ card.value }}</h2>
-      </div>
+        <span class="stat-card__hint">
+          <span class="material-symbols-outlined">open_in_new</span>
+        </span>
+      </button>
     }
   </section>
 
@@ -62,7 +65,9 @@
     <div class="card">
       <div class="card__header">
         <h3>Low Stock Products</h3>
-        <span class="card__badge">{{ lowStock.length }} Items</span>
+        <button class="card__badge card__badge--link" (click)="navigate('/inventory')">
+          {{ lowStock.length }} Items →
+        </button>
       </div>
       <div class="table-wrap">
         <table>
@@ -88,23 +93,29 @@
       </div>
     </div>
 
-    <!-- BORROWERS -->
+    <!-- BORROWERS — click to open balance sheet -->
     <div class="card">
       <div class="card__header">
         <h3>Borrowers</h3>
-        <span class="card__badge">₹{{ totalBorrowing() | number }}</span>
+        <button class="card__badge card__badge--link" (click)="navigate('/customers')">
+          ₹{{ totalBorrowing() | number }} →
+        </button>
       </div>
       <div class="borrower-list">
         @for(item of borrowers; track item.id) {
-          <div class="borrower">
+          <button class="borrower" (click)="openBorrower(item.phone)"
+            title="View {{ item.name }}'s balance sheet">
             <div class="borrower__info">
               <strong>{{ item.name }}</strong>
               <small>{{ item.phone }} · {{ item.dueDays }} days pending</small>
             </div>
-            <span class="borrower__amount" [class.overdue]="item.dueDays > 20">
-              ₹{{ item.amount | number }}
-            </span>
-          </div>
+            <div class="borrower__right">
+              <span class="borrower__amount" [class.overdue]="item.dueDays > 20">
+                ₹{{ item.amount | number }}
+              </span>
+              <span class="material-symbols-outlined borrower__arrow">chevron_right</span>
+            </div>
+          </button>
         }
       </div>
     </div>
@@ -116,7 +127,9 @@
   <section class="card">
     <div class="card__header">
       <h3>Recent Transactions</h3>
-      <span class="card__badge">Total ₹{{ totalSales() | number }}</span>
+      <button class="card__badge card__badge--link" (click)="navigate('/sales')">
+        ₹{{ totalSales() | number }} →
+      </button>
     </div>
     <div class="table-wrap">
       <table>
@@ -195,3 +208,230 @@
   </section>
 
 </div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     FLOATING NEW SALE BUTTON (bottom-left)
+══════════════════════════════════════════════════════════ -->
+<button class="fab-new-sale" (click)="navigate('/sales')" title="New Sale">
+  <span class="material-symbols-outlined">point_of_sale</span>
+  <span class="fab-new-sale__label">New Sale</span>
+</button>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     DRILLDOWN PANEL OVERLAY
+══════════════════════════════════════════════════════════ -->
+@if(activeDrilldown()) {
+<div class="drilldown-backdrop" (click)="closeDrilldown()">
+  <div class="drilldown-panel" (click)="$event.stopPropagation()">
+
+    <!-- ── Pending Invoices ─────────────────────────────── -->
+    @if(activeDrilldown() === 'pending-invoices') {
+      <div class="drilldown-header">
+        <div class="drilldown-header__left">
+          <span class="material-symbols-outlined" style="color:#0ea5e9">receipt_long</span>
+          <div>
+            <h2>Pending Invoices</h2>
+            <p>Unpaid sales bills by date range</p>
+          </div>
+        </div>
+        <button class="drilldown-close" (click)="closeDrilldown()">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <!-- Range pills -->
+      <div class="range-pills">
+        @for(r of DATE_RANGES; track r) {
+          <button class="range-pill" [class.active]="pendingRange() === r"
+            (click)="pendingRange.set(r)">{{ r }}</button>
+        }
+      </div>
+
+      <!-- Summary strip -->
+      <div class="drill-summary">
+        <div class="drill-summary__item">
+          <span class="drill-summary__label">Invoices</span>
+          <span class="drill-summary__value">{{ activePendingGroup().items.length }}</span>
+        </div>
+        <div class="drill-summary__item">
+          <span class="drill-summary__label">Total Due</span>
+          <span class="drill-summary__value danger">₹{{ groupTotal(activePendingGroup().items) | number }}</span>
+        </div>
+      </div>
+
+      @if(activePendingGroup().items.length === 0) {
+        <div class="drill-empty">
+          <span class="material-symbols-outlined">check_circle</span>
+          <p>No pending invoices for {{ pendingRange() }}</p>
+        </div>
+      } @else {
+        <div class="drill-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Invoice</th>
+                <th>Customer</th>
+                <th>Amount</th>
+                <th>Time</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for(tx of activePendingGroup().items; track tx.id) {
+                <tr>
+                  <td class="mono">{{ tx.invoice }}</td>
+                  <td>{{ tx.customer }}</td>
+                  <td class="amount danger">₹{{ tx.amount | number }}</td>
+                  <td class="muted">{{ tx.date }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+      <div class="drilldown-footer">
+        <button class="drill-action-btn" (click)="navigate('/sales'); closeDrilldown()">
+          <span class="material-symbols-outlined">open_in_new</span> View All in Sales
+        </button>
+      </div>
+    }
+
+
+    <!-- ── Today's Purchases ────────────────────────────── -->
+    @if(activeDrilldown() === 'purchases') {
+      <div class="drilldown-header">
+        <div class="drilldown-header__left">
+          <span class="material-symbols-outlined" style="color:#f59e0b">shopping_bag</span>
+          <div>
+            <h2>Purchase Orders</h2>
+            <p>Purchases by date range</p>
+          </div>
+        </div>
+        <button class="drilldown-close" (click)="closeDrilldown()">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <!-- Range pills -->
+      <div class="range-pills">
+        @for(r of PURCHASE_RANGES; track r) {
+          <button class="range-pill" [class.active]="purchaseRange() === r"
+            (click)="purchaseRange.set(r)">{{ r }}</button>
+        }
+      </div>
+
+      <!-- Summary strip -->
+      <div class="drill-summary">
+        <div class="drill-summary__item">
+          <span class="drill-summary__label">Orders</span>
+          <span class="drill-summary__value">{{ activePurchaseGroup().items.length }}</span>
+        </div>
+        <div class="drill-summary__item">
+          <span class="drill-summary__label">Total Value</span>
+          <span class="drill-summary__value">₹{{ groupTotal(activePurchaseGroup().items) | number }}</span>
+        </div>
+      </div>
+
+      @if(activePurchaseGroup().items.length === 0) {
+        <div class="drill-empty">
+          <span class="material-symbols-outlined">inventory_2</span>
+          <p>No purchases recorded for {{ purchaseRange() }}</p>
+        </div>
+      } @else {
+        <div class="drill-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>PO Number</th>
+                <th>Supplier</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Time</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for(tx of activePurchaseGroup().items; track tx.id) {
+                <tr>
+                  <td class="mono">{{ tx.invoice }}</td>
+                  <td>{{ tx.customer }}</td>
+                  <td class="amount">₹{{ tx.amount | number }}</td>
+                  <td>
+                    <span class="badge" [class.success]="tx.status === 'Paid'"
+                      [class.warning]="tx.status === 'Pending'">{{ tx.status }}</span>
+                  </td>
+                  <td class="muted">{{ tx.date }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+      <div class="drilldown-footer">
+        <button class="drill-action-btn" (click)="navigate('/purchases'); closeDrilldown()">
+          <span class="material-symbols-outlined">open_in_new</span> View All in Purchases
+        </button>
+      </div>
+    }
+
+
+    <!-- ── Monthly Revenue ──────────────────────────────── -->
+    @if(activeDrilldown() === 'monthly-revenue') {
+      <div class="drilldown-header">
+        <div class="drilldown-header__left">
+          <span class="material-symbols-outlined" style="color:#06b6d4">trending_up</span>
+          <div>
+            <h2>Monthly Revenue</h2>
+            <p>Last 12 months performance</p>
+          </div>
+        </div>
+        <button class="drilldown-close" (click)="closeDrilldown()">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <!-- Revenue table with visual bar -->
+      <div class="drill-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Month</th>
+              <th>Revenue</th>
+              <th>Profit</th>
+              <th>Orders</th>
+              <th>Trend</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for(m of monthlyRevenue; track m.month; let last = $last) {
+              <tr [class.current-month]="last">
+                <td class="month-cell">
+                  {{ m.month }}
+                  @if(last) { <span class="current-tag">Current</span> }
+                </td>
+                <td class="amount">₹{{ m.revenue | number }}</td>
+                <td class="amount profit">₹{{ m.profit | number }}</td>
+                <td class="center">{{ m.orders }}</td>
+                <td class="bar-cell">
+                  <div class="rev-bar-wrap">
+                    <div class="rev-bar" [style.width.%]="revBarPct(m.revenue)"></div>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="drilldown-footer">
+        <button class="drill-action-btn" (click)="navigate('/reports'); closeDrilldown()">
+          <span class="material-symbols-outlined">open_in_new</span> View Full Reports
+        </button>
+      </div>
+    }
+
+  </div>
+</div>
+}

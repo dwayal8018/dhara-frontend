@@ -175,7 +175,6 @@
   box-shadow: var(--dh-shadow-sm);
   display: flex;
   flex-direction: column;
-  gap: 0;
   overflow: hidden;
 }
 .inv-meta {
@@ -704,6 +703,227 @@ tbody tr:hover { background: #f8fafc; }
 }
 .icon-btn .material-symbols-outlined { font-size: 16px; }
 .icon-btn:hover { background: var(--dh-background); color: var(--dh-text-primary); }
+.icon-btn.pay-btn:hover { background: #dcfce7; color: #16a34a; }
+
+/* ══ PARTIAL PAYMENT MODAL ══════════════════════════════════════════════ */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  animation: fadeIn 0.15s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.pay-modal {
+  background: var(--dh-surface);
+  border-radius: var(--dh-radius-xl);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  width: 100%;
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.2s ease;
+  overflow: hidden;
+}
+
+.pay-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--dh-border);
+  flex-shrink: 0;
+}
+.pay-modal__title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--dh-text-primary);
+  font-family: var(--dh-font-heading);
+}
+.pay-modal__title .material-symbols-outlined { font-size: 22px; color: #16a34a; }
+.pay-modal__close {
+  width: 34px; height: 34px;
+  border: none; background: var(--dh-background);
+  border-radius: var(--dh-radius-md);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--dh-text-muted);
+  transition: background 150ms, color 150ms;
+}
+.pay-modal__close:hover { background: #fee2e2; color: #dc2626; }
+.pay-modal__close .material-symbols-outlined { font-size: 18px; }
+
+/* Invoice summary strip */
+.pay-modal__summary {
+  background: var(--dh-background);
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--dh-border);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.pay-modal__inv-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.pay-modal__inv-num {
+  font-family: monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--dh-primary);
+  background: #eff6ff;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+.pay-modal__customer {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--dh-text-primary);
+}
+.pay-modal__phone { font-size: 13px; color: var(--dh-text-muted); }
+
+.pay-modal__amounts {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.pay-modal__amount-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.pay-modal__amount-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--dh-text-muted);
+  font-weight: 600;
+}
+.pay-modal__amount-value {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--dh-text-primary);
+  font-family: var(--dh-font-heading);
+}
+.pay-modal__amount-value.success { color: #16a34a; }
+.pay-modal__amount-value.danger  { color: #dc2626; }
+
+/* Quick amount chips */
+.pay-modal__chips {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.pay-modal__chips-label {
+  font-size: 12px;
+  color: var(--dh-text-muted);
+  margin-right: 2px;
+}
+.pay-modal__chip {
+  padding: 4px 12px;
+  border: 1px solid var(--dh-border);
+  border-radius: 999px;
+  background: var(--dh-surface);
+  font-size: 12px;
+  font-family: var(--dh-font-body);
+  font-weight: 500;
+  color: var(--dh-text-secondary);
+  cursor: pointer;
+  transition: background 150ms, border-color 150ms, color 150ms;
+}
+.pay-modal__chip:hover { background: #eff6ff; border-color: var(--dh-primary); color: var(--dh-primary); }
+.pay-modal__chip--full {
+  background: #dcfce7; border-color: #86efac; color: #16a34a; font-weight: 600;
+}
+.pay-modal__chip--full:hover { background: #bbf7d0; }
+
+/* Payment form */
+.pay-modal__form {
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.pay-modal__field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.pay-modal__field label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--dh-text-muted);
+}
+.pay-modal__field .req { color: #ef4444; }
+.pay-modal__field input {
+  padding: 9px 13px;
+  border: 1px solid var(--dh-border);
+  border-radius: var(--dh-radius-md);
+  font-size: 15px;
+  font-weight: 600;
+  font-family: var(--dh-font-body);
+  color: var(--dh-text-primary);
+  background: var(--dh-background);
+  outline: none;
+  transition: border-color 150ms;
+  -moz-appearance: textfield;
+}
+.pay-modal__field input:focus { border-color: var(--dh-primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+.pay-modal__field input::-webkit-outer-spin-button,
+.pay-modal__field input::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+.pay-modal__modes {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.pay-mode-btn {
+  flex: 1;
+  min-width: 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 9px 8px;
+  border: 2px solid var(--dh-border);
+  border-radius: var(--dh-radius-md);
+  background: var(--dh-background);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: var(--dh-font-body);
+  color: var(--dh-text-secondary);
+  transition: border-color 150ms, background 150ms, color 150ms;
+}
+.pay-mode-btn .material-symbols-outlined { font-size: 18px; }
+.pay-mode-btn:hover { border-color: var(--dh-primary); color: var(--dh-primary); background: #eff6ff; }
+.pay-mode-btn.active { border-color: #16a34a; background: #dcfce7; color: #15803d; font-weight: 700; }
+
+.pay-modal__footer {
+  padding: 14px 22px;
+  border-top: 1px solid var(--dh-border);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-shrink: 0;
+}
 
 /* EMPTY STATE */
 .empty-state {

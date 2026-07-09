@@ -1,6 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, signal, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import {
   CUSTOMERS, KHATA_ENTRIES, CUSTOMER_STATS,
   Customer, KhataEntry, PaymentMode
@@ -14,7 +15,9 @@ import {
   styleUrl: './customers.css',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class Customers {
+export class Customers implements OnInit {
+
+  private readonly route = inject(ActivatedRoute);
 
   // ── Data ────────────────────────────────────────────────────────────────
   readonly stats         = CUSTOMER_STATS;
@@ -27,6 +30,24 @@ export class Customers {
   statusFilter  = signal<'all' | 'Active' | 'Inactive'>('all');
   sortBy        = signal<'name' | 'outstanding' | 'overdue'>('overdue');
   selectedId    = signal<number>(1);          // Mahesh Bhosale pre-selected
+
+  /** Highlight that a deep-link from Dashboard opened this page */
+  deepLinked = signal(false);
+
+  ngOnInit(): void {
+    // When navigated from dashboard borrower click (?phone=XXXXXXXXXX),
+    // find the matching customer and pre-select them.
+    const phone = this.route.snapshot.queryParamMap.get('phone');
+    if (phone) {
+      const match = this.allCustomers.find(c => c.phone === phone);
+      if (match) {
+        this.selectedId.set(match.id);
+        this.deepLinked.set(true);
+        // Scroll hint: reset status filter to ensure they're visible
+        this.statusFilter.set('all');
+      }
+    }
+  }
 
   readonly filteredCustomers = computed(() => {
     const q      = this.search().toLowerCase();

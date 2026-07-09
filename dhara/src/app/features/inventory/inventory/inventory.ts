@@ -4,6 +4,9 @@ import { FormsModule } from '@angular/forms';
 import { PRODUCTS, INVENTORY_STATS, CATEGORIES, Product, Category } from './inventory.data';
 import { Router } from '@angular/router';
 
+export type SortKey = 'name' | 'stock' | 'price' | 'margin';
+export type SortDir = 'asc' | 'desc';
+
 @Component({
   selector: 'app-inventory',
   standalone: true,
@@ -17,13 +20,34 @@ export class Inventory {
   readonly stats = INVENTORY_STATS;
   readonly allCategories = CATEGORIES;
 
-  searchQuery = signal('');
+  searchQuery      = signal('');
   selectedCategory = signal('all');
-  selectedStatus = signal('all');
-  viewMode = signal<'table' | 'grid'>('table');
-  showAddModal = signal(false);
-  editingProduct = signal<Product | null>(null);
-  toast = signal('');
+  selectedStatus   = signal('all');
+  viewMode         = signal<'table' | 'grid'>('table');
+  showAddModal     = signal(false);
+  editingProduct   = signal<Product | null>(null);
+  toast            = signal('');
+
+  // ── Within-category sort ─────────────────────────────────────────────────
+  sortKey = signal<SortKey>('name');
+  sortDir = signal<SortDir>('asc');
+
+  readonly sortOptions: { key: SortKey; label: string }[] = [
+    { key: 'name',   label: 'Name'          },
+    { key: 'stock',  label: 'Stock (Low→High)' },
+    { key: 'price',  label: 'Selling Price'  },
+    { key: 'margin', label: 'Margin'         },
+  ];
+
+  setSort(key: SortKey) {
+    if (this.sortKey() === key) {
+      // toggle direction on re-click
+      this.sortDir.update(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      this.sortKey.set(key);
+      this.sortDir.set(key === 'stock' ? 'asc' : 'asc');
+    }
+  }
 
   // Add-product form fields
   form = signal({
@@ -40,11 +64,14 @@ export class Inventory {
     setTimeout(() => this.toast.set(''), 3000);
   }
 
+  // ── Filtered + within-category sorted list ───────────────────────────────
   readonly products = computed(() => {
-    let list = PRODUCTS;
-    const q = this.searchQuery().toLowerCase();
-    const cat = this.selectedCategory();
+    let list = [...PRODUCTS];
+    const q      = this.searchQuery().toLowerCase();
+    const cat    = this.selectedCategory();
     const status = this.selectedStatus();
+    const key    = this.sortKey();
+    const dir    = this.sortDir();
 
     if (q) {
       list = list.filter(p =>
@@ -60,10 +87,45 @@ export class Inventory {
     if (status !== 'all') {
       list = list.filter(p => p.status === status);
     }
-    return list;
+
+    // Sort WITHIN each category group so items stay grouped by category
+    // when "All" is selected, but are sorted within their group.
+    const sortFn = (a: Product, b: Product): number => {
+      let cmp = 0;
+      if (key === 'name')   cmp = a.name.localeCompare(b.name);
+      if (key === 'stock')  cmp = a.stock - b.stock;
+      if (key === 'price')  cmp = a.sellingPrice - b.sellingPrice;
+      if (key === 'margin') cmp = this.margin(a) - this.margin(b);
+      return dir === 'asc' ? cmp : -cmp;
+    };
+
+    if (cat === 'all') {
+      // Group by category → sort within each group → flatten
+      const groups = new Map<string, Product[]>();
+      for (const p of list) {
+        if (!groups.has(p.category)) groups.set(p.category, []);
+        groups.get(p.category)!.push(p);
+      }
+      for (const [, grp] of groups) grp.sort(sortFn);
+      return Array.from(groups.values()).flat();
+    } else {
+      return list.sort(sortFn);
+    }
   });
 
-  setCategory(cat: string) { this.selectedCategory.set(cat); }
+  // Derived: is a column currently the active sort?
+  isSorted(key: SortKey): boolean  { return this.sortKey() === key; }
+  sortIcon(key: SortKey): string {
+    if (this.sortKey() !== key) return 'unfold_more';
+    return this.sortDir() === 'asc' ? 'keyboard_arrow_up' : 'keyboard_arrow_down';
+  }
+
+  setCategory(cat: string) {
+    this.selectedCategory.set(cat);
+    // Reset sort to name-asc when switching category for a clean view
+    this.sortKey.set('name');
+    this.sortDir.set('asc');
+  }
   setView(mode: 'table' | 'grid') { this.viewMode.set(mode); }
 
   openAddModal() {

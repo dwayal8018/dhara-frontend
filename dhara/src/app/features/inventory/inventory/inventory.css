@@ -212,6 +212,86 @@
 .view-toggle button.active { background: var(--dh-primary); color: #fff; }
 .view-toggle button:hover:not(.active) { background: var(--dh-border); }
 
+/* SORT BAR — sits inside prod-panel above results count */
+.sort-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  background: var(--dh-surface);
+  border: 1px solid var(--dh-border);
+  border-radius: var(--dh-radius-lg);
+  padding: 10px 14px;
+  box-shadow: var(--dh-shadow-sm);
+}
+.sort-bar__label {
+  font-size: 12px;
+  color: var(--dh-text-muted);
+  white-space: nowrap;
+  margin-right: 2px;
+  flex-shrink: 0;
+}
+.sort-bar__label strong {
+  color: var(--dh-text-secondary);
+  text-transform: capitalize;
+  font-weight: 600;
+}
+.sort-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 12px;
+  border: 1px solid var(--dh-border);
+  border-radius: 999px;
+  background: var(--dh-background);
+  font-size: 12px;
+  font-family: var(--dh-font-body);
+  font-weight: 500;
+  color: var(--dh-text-secondary);
+  cursor: pointer;
+  line-height: 1.4;
+  transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+.sort-pill:hover { background: #eff6ff; border-color: var(--dh-primary); color: var(--dh-primary); }
+.sort-pill.active { background: var(--dh-primary); border-color: var(--dh-primary); color: #fff; font-weight: 600; }
+
+/* Keep the sort-arrow icon inside pill rendering correctly */
+.sort-arrow {
+  font-size: 14px !important;
+  font-family: 'Material Symbols Outlined' !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  font-weight: normal !important;
+  display: inline !important;
+  vertical-align: -2px;
+  line-height: 1;
+}
+
+/* SORTABLE TABLE HEADERS */
+.th-sort {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  transition: color 150ms ease;
+}
+.th-sort:hover { color: var(--dh-primary); }
+
+/* Override the global `th` text-transform so the icon glyph renders */
+.th-sort-icon {
+  font-size: 14px !important;
+  font-family: 'Material Symbols Outlined' !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  font-weight: normal !important;
+  display: inline !important;
+  vertical-align: -3px;
+  margin-left: 3px;
+  opacity: 0.5;
+  transition: opacity 150ms ease;
+  line-height: 1;
+}
+.th-sort:hover .th-sort-icon { opacity: 1; }
+
 /* RESULTS BAR */
 .results-bar {
   font-size: 13px;

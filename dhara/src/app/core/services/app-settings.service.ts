@@ -23,6 +23,7 @@ const SK = {
 
 function load<T>(key: string, fallback: T): T {
   try {
+    // localStorage.clear();
     const raw = localStorage.getItem(key);
     return raw ? (JSON.parse(raw) as T) : fallback;
   } catch {

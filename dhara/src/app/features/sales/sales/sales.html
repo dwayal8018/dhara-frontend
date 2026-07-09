@@ -348,6 +348,12 @@
                   <button class="icon-btn" title="View details">
                     <span class="material-symbols-outlined">open_in_new</span>
                   </button>
+                  @if(inv.status !== 'Paid') {
+                    <button class="icon-btn pay-btn" title="Record payment"
+                      (click)="openPartialPayModal(inv)">
+                      <span class="material-symbols-outlined">payments</span>
+                    </button>
+                  }
                 </div>
               </td>
             </tr>
@@ -370,4 +376,102 @@
 
 @if(toast()) {
   <div class="toast">{{ toast() }}</div>
+}
+
+<!-- ══ PARTIAL PAYMENT MODAL ══════════════════════════════════════════════ -->
+@if(showPartialPayModal()) {
+  <div class="modal-backdrop" (click)="showPartialPayModal.set(false)">
+    <div class="pay-modal" (click)="$event.stopPropagation()">
+
+      <div class="pay-modal__header">
+        <div class="pay-modal__title">
+          <span class="material-symbols-outlined">payments</span>
+          Record Payment
+        </div>
+        <button class="pay-modal__close" (click)="showPartialPayModal.set(false)">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      @if(partialPayInvoice(); as inv) {
+        <!-- Invoice summary -->
+        <div class="pay-modal__summary">
+          <div class="pay-modal__inv-row">
+            <span class="pay-modal__inv-num">{{ inv.invoice }}</span>
+            <span class="pay-modal__customer">{{ inv.customer }}</span>
+            <span class="pay-modal__phone muted">{{ inv.phone }}</span>
+          </div>
+          <div class="pay-modal__amounts">
+            <div class="pay-modal__amount-item">
+              <span class="pay-modal__amount-label">Invoice Total</span>
+              <span class="pay-modal__amount-value">₹{{ inv.total | number }}</span>
+            </div>
+            <div class="pay-modal__amount-item">
+              <span class="pay-modal__amount-label">Already Paid</span>
+              <span class="pay-modal__amount-value success">₹{{ inv.paid | number }}</span>
+            </div>
+            <div class="pay-modal__amount-item">
+              <span class="pay-modal__amount-label">Balance Due</span>
+              <span class="pay-modal__amount-value danger">₹{{ (inv.total - inv.paid) | number }}</span>
+            </div>
+          </div>
+
+          <!-- Quick amount chips -->
+          <div class="pay-modal__chips">
+            <span class="pay-modal__chips-label">Quick:</span>
+            @for(pct of [25, 50, 75, 100]; track pct) {
+              <button class="pay-modal__chip"
+                (click)="partialPayAmount.set(Math.round((inv.total - inv.paid) * pct / 100))">
+                {{ pct }}%
+              </button>
+            }
+            <button class="pay-modal__chip pay-modal__chip--full"
+              (click)="partialPayAmount.set(inv.total - inv.paid)">
+              Pay Full
+            </button>
+          </div>
+        </div>
+
+        <!-- Payment form -->
+        <div class="pay-modal__form">
+          <div class="pay-modal__field">
+            <label>Amount (₹) <span class="req">*</span></label>
+            <input type="number" min="0"
+              [value]="partialPayAmount()"
+              (input)="partialPayAmount.set(+$any($event.target).value)"
+              placeholder="0">
+          </div>
+
+          <div class="pay-modal__field">
+            <label>Payment Mode</label>
+            <div class="pay-modal__modes">
+              @for(m of paymentModes; track m) {
+                <button class="pay-mode-btn"
+                  [class.active]="partialPayMode() === m"
+                  (click)="partialPayMode.set(m)">
+                  <span class="material-symbols-outlined">{{ modeIcon(m) }}</span>
+                  {{ m }}
+                </button>
+              }
+            </div>
+          </div>
+
+          <div class="pay-modal__field">
+            <label>Reference / Notes</label>
+            <input type="text" placeholder="UPI ref, cheque no., etc."
+              [value]="partialPayRef()"
+              (input)="partialPayRef.set($any($event.target).value)">
+          </div>
+        </div>
+
+        <div class="pay-modal__footer">
+          <button class="btn btn--outline" (click)="showPartialPayModal.set(false)">Cancel</button>
+          <button class="btn btn--primary" (click)="savePartialPayment()">
+            <span class="material-symbols-outlined">check_circle</span> Record Payment
+          </button>
+        </div>
+      }
+
+    </div>
+  </div>
 }

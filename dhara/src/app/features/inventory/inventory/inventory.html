@@ -84,6 +84,24 @@
                 </div>
             </div>
 
+            <!-- SORT BAR -->
+            <div class="sort-bar">
+              <span class="sort-bar__label">
+                Sort within
+                <strong>{{ selectedCategory() === 'all' ? 'each category' : selectedCategory() }}</strong> by:
+              </span>
+              @for(opt of sortOptions; track opt.key) {
+                <button class="sort-pill"
+                  [class.active]="isSorted(opt.key)"
+                  (click)="setSort(opt.key)">
+                  {{ opt.label }}
+                  @if(isSorted(opt.key)) {
+                    <span class="material-symbols-outlined sort-arrow">{{ sortIcon(opt.key) }}</span>
+                  }
+                </button>
+              }
+            </div>
+
             <!-- RESULTS COUNT -->
             <div class="results-bar">
                 <span>Showing <strong>{{ products().length }}</strong> products</span>
@@ -96,14 +114,26 @@
                     <thead>
                         <tr>
                             <th>SKU</th>
-                            <th>Product</th>
+                            <th class="th-sort" (click)="setSort('name')">
+                              Product
+                              <span class="material-symbols-outlined th-sort-icon">{{ sortIcon('name') }}</span>
+                            </th>
                             <th>Category</th>
                             <th>Brand</th>
-                            <th>Stock</th>
+                            <th class="th-sort" (click)="setSort('stock')">
+                              Stock
+                              <span class="material-symbols-outlined th-sort-icon">{{ sortIcon('stock') }}</span>
+                            </th>
                             <th>Purchase ₹</th>
-                            <th>Selling ₹</th>
+                            <th class="th-sort" (click)="setSort('price')">
+                              Selling ₹
+                              <span class="material-symbols-outlined th-sort-icon">{{ sortIcon('price') }}</span>
+                            </th>
                             <th>Wholesale ₹</th>
-                            <th>Margin</th>
+                            <th class="th-sort" (click)="setSort('margin')">
+                              Margin
+                              <span class="material-symbols-outlined th-sort-icon">{{ sortIcon('margin') }}</span>
+                            </th>
                             <th>GST</th>
                             <th>Location</th>
                             <th>Status</th>

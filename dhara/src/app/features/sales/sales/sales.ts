@@ -152,6 +152,36 @@ export class Sales {
   readonly historyTotalCollected = computed(() => this.filteredHistory().reduce((s, i) => s + i.paid,   0));
   readonly historyTotalPending  = computed(() => this.filteredHistory().reduce((s, i) => s + Math.max(0, i.total - i.paid), 0));
 
+  // ── Partial payment modal ────────────────────────────────────────────────
+  showPartialPayModal = signal(false);
+  partialPayInvoice   = signal<SavedInvoice | null>(null);
+  partialPayAmount    = signal(0);
+  partialPayMode      = signal<PaymentMode>('Cash');
+  partialPayRef       = signal('');
+
+  readonly Math = Math;
+
+  openPartialPayModal(inv: SavedInvoice) {
+    this.partialPayInvoice.set(inv);
+    this.partialPayAmount.set(inv.total - inv.paid);
+    this.partialPayMode.set('Cash');
+    this.partialPayRef.set('');
+    this.showPartialPayModal.set(true);
+  }
+
+  savePartialPayment() {
+    const inv = this.partialPayInvoice();
+    if (!inv) return;
+    const amt = this.partialPayAmount();
+    const due = inv.total - inv.paid;
+    if (amt <= 0)   { this.showToast('Enter a valid amount.'); return; }
+    if (amt > due)  { this.showToast(`Amount exceeds balance due (₹${due.toLocaleString('en-IN')}).`); return; }
+
+    const label = amt >= due ? 'fully paid' : `partial payment of ₹${amt.toLocaleString('en-IN')} recorded`;
+    this.showToast(`${inv.invoice} — ${label} via ${this.partialPayMode()}.`);
+    this.showPartialPayModal.set(false);
+  }
+
   // ── Actions ──────────────────────────────────────────────────────────────
   constructor(private router: Router) {}
 
