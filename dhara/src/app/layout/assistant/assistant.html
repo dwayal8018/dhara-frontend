@@ -1,0 +1,70 @@
+<!-- FLOATING TOGGLE BUTTON -->
+<button class="assistant-toggle" (click)="togglePanel()" [class.hidden]="isOpen()" title="Open Assistant">
+  <span class="material-symbols-outlined">chat_bubble</span>
+  <span class="pulse-ring"></span>
+</button>
+
+<!-- ASSISTANT PANEL -->
+<div class="assistant-panel" [class.open]="isOpen()">
+  <!-- PANEL HEADER -->
+  <div class="assistant-panel__header">
+    <div class="header-title">
+      <span class="material-symbols-outlined">smart_toy</span>
+      <div>
+        <h3>Dhara Assistant</h3>
+        <span class="status-indicator">Online</span>
+      </div>
+    </div>
+    <button class="close-btn" (click)="togglePanel()" title="Close Panel">
+      <span class="material-symbols-outlined">close</span>
+    </button>
+  </div>
+
+  <!-- MESSAGES LOG -->
+  <div class="assistant-panel__messages" #messageLog>
+    @for (msg of messages(); track msg.timestamp) {
+      <div class="message-row" [class.user]="msg.sender === 'user'">
+        <div class="message-bubble" [class.user-bubble]="msg.sender === 'user'">
+          <div class="message-text">{{ msg.text }}</div>
+          @if (msg.action) {
+            <button class="action-btn" (click)="executeAction(msg.action)">
+              <span class="material-symbols-outlined">open_in_new</span>
+              {{ msg.action.btnLabel || 'Execute Action' }}
+            </button>
+          }
+          <div class="message-time">
+            {{ formatTime(msg.timestamp) }}
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- QUICK SUGGESTIONS -->
+  <div class="assistant-panel__suggestions">
+    @for (chip of suggestionChips; track chip) {
+      <button class="suggestion-chip" (click)="selectSuggestion(chip)">
+        {{ chip }}
+      </button>
+    }
+  </div>
+
+  <!-- INPUT BAR -->
+  <div class="assistant-panel__input">
+    <button class="voice-btn" 
+      [class.listening]="isListening()" 
+      (click)="toggleListening()"
+      [title]="isListening() ? 'Stop Listening' : 'Voice Input'">
+      <span class="material-symbols-outlined">{{ isListening() ? 'mic_active' : 'mic' }}</span>
+    </button>
+    
+    <input type="text" 
+      [placeholder]="isListening() ? 'Listening... Speak now' : 'Ask anything in Hindi, Marathi, English...'"
+      [(ngModel)]="inputText"
+      (keydown.enter)="sendText()">
+      
+    <button class="send-btn" (click)="sendText()" [disabled]="!inputText.trim()" title="Send Message">
+      <span class="material-symbols-outlined">send</span>
+    </button>
+  </div>
+</div>

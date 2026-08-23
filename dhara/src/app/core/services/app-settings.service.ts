@@ -1,4 +1,5 @@
 import { effect, Injectable, signal } from '@angular/core';
+import { Router, NavigationEnd } from '@angular/router';
 import {
   SHOP_PROFILE, STAFF_USERS, TAX_CONFIG, NOTIFICATION_PREFS,
   ShopProfile, StaffUser, TaxConfig, NotificationPref,
@@ -54,7 +55,37 @@ export class AppSettingsService {
   notifs = signal<NotificationPref[]>(load(SK.NOTIFS, [...NOTIFICATION_PREFS]));
   users  = signal<StaffUser[]>(load(SK.USERS,  [...STAFF_USERS]));
 
-  constructor() {
+  constructor(private readonly router: Router) {
+    // Listen to router navigation to re-apply Google Translation
+    this.router.events.subscribe(event => {
+      if (event instanceof NavigationEnd) {
+        setTimeout(() => {
+          try {
+            const currentLang = this.language();
+            const targetLang = currentLang === 'English' ? '' : (currentLang === 'Marathi' ? 'mr' : 'hi');
+            
+            const combo = document.querySelector('.goog-te-combo') as HTMLSelectElement;
+            if (combo) {
+              if (targetLang) {
+                // Double-dispatch: temporarily reset to force Google Translate to re-scan the new DOM view
+                combo.value = '';
+                combo.dispatchEvent(new Event('change'));
+                setTimeout(() => {
+                  combo.value = targetLang;
+                  combo.dispatchEvent(new Event('change'));
+                }, 50);
+              } else {
+                combo.value = '';
+                combo.dispatchEvent(new Event('change'));
+              }
+            }
+          } catch (e) {
+            // safe catch
+          }
+        }, 500); // 500ms delay to let Angular render the new component view
+      }
+    });
+
     // Set initial attribute values immediately so there's no flash before
     // the first effect run
     const initialFont = this.fontSize();
@@ -121,6 +152,33 @@ export class AppSettingsService {
       const isDevanagari = lang === 'Marathi' || lang === 'Hindi';
       document.documentElement.setAttribute('data-lang', isDevanagari ? 'devanagari' : 'latin');
       save(SK.LANGUAGE, lang);
+
+      // Programmatically trigger Google Translate combo selection
+      try {
+        const targetLang = lang === 'English' ? '' : (langMap[lang] ?? '');
+        
+        const triggerTranslate = () => {
+          const combo = document.querySelector('.goog-te-combo') as HTMLSelectElement;
+          if (combo) {
+            combo.value = targetLang;
+            combo.dispatchEvent(new Event('change'));
+            return true;
+          }
+          return false;
+        };
+
+        if (!triggerTranslate()) {
+          let attempts = 0;
+          const interval = setInterval(() => {
+            attempts++;
+            if (triggerTranslate() || attempts > 10) {
+              clearInterval(interval);
+            }
+          }, 500);
+        }
+      } catch (err) {
+        // Safe catch for environment issues
+      }
     });
     effect(() => save(SK.CURRENCY,   this.currency()));
     effect(() => save(SK.DATE_FMT,   this.dateFormat()));

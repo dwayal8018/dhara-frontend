@@ -3,8 +3,8 @@
   <!-- PAGE HEADER -->
   <div class="page-header">
     <div class="page-header__left">
-      <h1 class="page-title">Settings</h1>
-      <p class="page-subtitle">Configure your shop, users, taxes and preferences</p>
+      <h1 class="page-title">{{ 'settings' | translate }}</h1>
+      <p class="page-subtitle">{{ 'settings_subtitle' | translate }}</p>
     </div>
   </div>
 
@@ -14,16 +14,16 @@
     <!-- SIDEBAR NAV -->
     <nav class="settings-nav">
       @for(tab of [
-        {id:'shop',          label:'Shop Profile',    icon:'store'},
-        {id:'users',         label:'Users & Staff',   icon:'manage_accounts'},
-        {id:'tax',           label:'Tax & GST',       icon:'receipt_long'},
-        {id:'notifications', label:'Notifications',   icon:'notifications'},
-        {id:'appearance',    label:'Appearance',      icon:'palette'}
+        {id:'shop',          labelKey:'shop_profile',    icon:'store'},
+        {id:'users',         labelKey:'users_staff',   icon:'manage_accounts'},
+        {id:'tax',           labelKey:'tax_gst',       icon:'receipt_long'},
+        {id:'notifications', labelKey:'notifications',   icon:'notifications'},
+        {id:'appearance',    labelKey:'appearance',      icon:'palette'}
       ]; track tab.id) {
         <button class="nav-item" [class.active]="activeTab() === tab.id"
           (click)="activeTab.set($any(tab.id))">
           <span class="material-symbols-outlined">{{ tab.icon }}</span>
-          {{ tab.label }}
+          {{ tab.labelKey | translate }}
         </button>
       }
     </nav>
@@ -386,7 +386,7 @@
           <div class="form-grid">
             <div class="form-group">
               <label>Language</label>
-              <select [value]="language()" (change)="language.set($any($event.target).value)">
+              <select [value]="language()" (change)="onLanguageChange($any($event.target).value)">
                 @for(l of languages; track l) { <option [value]="l">{{ l }}</option> }
               </select>
             </div>

@@ -6,12 +6,13 @@ import {
 import { RouterOutlet } from '@angular/router';
 import { Sidebar } from '../sidebar/sidebar';
 import { Header } from '../header/header';
+import { Assistant } from '../assistant/assistant';
 import { AppSettingsService } from '../../core/services/app-settings.service';
 
 @Component({
   selector: 'dh-app-shell',
   standalone: true,
-  imports: [RouterOutlet, Sidebar, Header],
+  imports: [RouterOutlet, Sidebar, Header, Assistant],
   templateUrl: './app-shell.html',
   styleUrl: './app-shell.scss',
   changeDetection: ChangeDetectionStrategy.OnPush

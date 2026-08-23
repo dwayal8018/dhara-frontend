@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AppSettingsService } from '../../../core/services/app-settings.service';
 import { StaffUser, UserRole, ThemeMode } from './settings.data';
+import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TranslatePipe],
   templateUrl: './settings.html',
   styleUrl: './settings.css',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -110,6 +111,10 @@ export class Settings {
   ];
   readonly languages: readonly string[] = ['English', 'Marathi', 'Hindi'];
   readonly fontSizes  = ['small', 'medium', 'large'] as const;
+
+  onLanguageChange(val: string) {
+    this.svc.language.set(val as any);
+  }
 
   saveAppearance() { this.showToast('Appearance preferences saved.'); }
 
