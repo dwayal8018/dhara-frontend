@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { Supplier, SupplierTransaction, PaymentMode } from './suppliers.data';
 import { SupplierService } from '../../../core/services/supplier.service';
 
@@ -15,6 +16,7 @@ import { SupplierService } from '../../../core/services/supplier.service';
 export class Suppliers {
 
   private readonly supplierService = inject(SupplierService);
+  readonly router = inject(Router);
 
   // ── Data from service ─────────────────────────────────────────────────────
   readonly stats        = computed(() => this.supplierService.stats());

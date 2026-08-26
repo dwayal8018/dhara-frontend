@@ -1,6 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { PurchaseOrder, PurchaseItem, CatProduct, PaymentMode, PaymentStatus } from './purchases.data';
 import { PurchaseService } from '../../../core/services/purchase.service';
 import { ProductService } from '../../../core/services/product.service';
@@ -20,11 +21,12 @@ export interface CartLine {
   styleUrl: './purchases.css',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class Purchases {
+export class Purchases implements OnInit {
 
   private readonly purchaseService = inject(PurchaseService);
   private readonly productService = inject(ProductService);
   private readonly supplierService = inject(SupplierService);
+  private readonly route = inject(ActivatedRoute);
 
   readonly Math  = Math;
   readonly today = new Date();
@@ -42,6 +44,18 @@ export class Purchases {
 
   // ── Tab state ─────────────────────────────────────────────────────────────
   activeTab = signal<'orders' | 'new'>('orders');
+
+  ngOnInit(): void {
+    const supplierName = this.route.snapshot.queryParamMap.get('supplier');
+    if (supplierName) {
+      // Switch to "new" tab first so the form renders
+      this.activeTab.set('new');
+      // Then pre-fill supplier after DOM update
+      setTimeout(() => {
+        this.newSupplier.set(supplierName);
+      }, 50);
+    }
+  }
 
   // ── Orders list filters ───────────────────────────────────────────────────
   search          = signal('');

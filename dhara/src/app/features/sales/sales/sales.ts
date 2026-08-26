@@ -416,16 +416,31 @@ export class Sales {
     <p style="margin-top:8px;color:#94a3b8">Powered by DHARA — Smart Business Management</p>
   </div>
 
-  <script>window.onload = function() { window.print(); }</script>
+  <script>/* print triggered by parent */</script>
 </body>
 </html>`;
 
-    const printWindow = window.open('', '_blank', 'width=820,height=900');
-    if (printWindow) {
-      printWindow.document.write(html);
-      printWindow.document.close();
-    } else {
-      this.showToast('Pop-up blocked. Please allow pop-ups for printing.');
+    // Use a hidden iframe to print without showing a new window
+    let iframe = document.getElementById('dh-print-frame') as HTMLIFrameElement;
+    if (!iframe) {
+      iframe = document.createElement('iframe');
+      iframe.id = 'dh-print-frame';
+      iframe.style.position = 'fixed';
+      iframe.style.top = '-10000px';
+      iframe.style.left = '-10000px';
+      iframe.style.width = '0';
+      iframe.style.height = '0';
+      iframe.style.border = 'none';
+      document.body.appendChild(iframe);
+    }
+    const doc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (doc) {
+      doc.open();
+      doc.write(html);
+      doc.close();
+      setTimeout(() => {
+        iframe.contentWindow?.print();
+      }, 300);
     }
   }
 

@@ -149,7 +149,7 @@
           <button class="btn btn--primary" (click)="openPayModal()">
             <span class="material-symbols-outlined">payments</span> Pay Supplier
           </button>
-          <button class="btn btn--outline" (click)="showToast('Opening purchase order for ' + s.name)">
+          <button class="btn btn--outline" (click)="router.navigate(['/purchases'], { queryParams: { supplier: selected().name } })">
             <span class="material-symbols-outlined">add_shopping_cart</span> New Order
           </button>
         </div>
