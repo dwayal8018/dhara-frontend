@@ -31,7 +31,7 @@
 
     <!-- KPI STATS GRID -->
     <div class="stats-grid">
-      @for(s of stats; track s.label) {
+      @for(s of stats(); track s.label) {
         <div class="stat-card">
           <div class="stat-card__top">
             <div class="stat-card__icon" [style.background]="s.color + '18'">

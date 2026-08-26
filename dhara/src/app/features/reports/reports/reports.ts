@@ -1,10 +1,13 @@
-import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
-  REPORT_STATS, DAILY_SALES, CATEGORY_SALES, PAYMENT_SPLIT,
-  TOP_PRODUCTS, TOP_CUSTOMERS, STOCK_ALERTS, TopProduct, TopCustomer
+  DAILY_SALES, CATEGORY_SALES, PAYMENT_SPLIT,
+  TOP_PRODUCTS, TOP_CUSTOMERS, TopProduct, TopCustomer
 } from './reports.data';
+import { ProductService } from '../../../core/services/product.service';
+import { SalesService } from '../../../core/services/sales.service';
+import { CustomerService } from '../../../core/services/customer.service';
 
 @Component({
   selector: 'app-reports',
@@ -16,14 +19,50 @@ import {
 })
 export class Reports {
 
-  // ── Static data ──────────────────────────────────────────────────────────
-  readonly stats         = REPORT_STATS;
+  private readonly productService  = inject(ProductService);
+  private readonly salesService    = inject(SalesService);
+  private readonly customerService = inject(CustomerService);
+
+  // ── Dynamic KPI stats ─────────────────────────────────────────────────────
+  readonly stats = computed(() => {
+    const revenue = this.salesService.monthlyRevenue();
+    const invoices = this.salesService.invoices();
+    const avgBill = invoices.length > 0 ? Math.round(revenue / invoices.length) : 0;
+    return [
+      { label: 'Monthly Revenue', value: '₹' + revenue.toLocaleString('en-IN'), change: 0, trend: 'up' as const, icon: 'trending_up', color: '#2563eb' },
+      { label: 'Total Orders', value: String(invoices.length), change: 0, trend: 'up' as const, icon: 'receipt_long', color: '#7c3aed' },
+      { label: 'Avg Bill Value', value: '₹' + avgBill.toLocaleString('en-IN'), change: 0, trend: 'up' as const, icon: 'payments', color: '#16a34a' },
+      { label: 'Total Products', value: String(this.productService.totalCount()), change: 0, trend: 'up' as const, icon: 'inventory_2', color: '#0f766e' },
+      { label: 'Low Stock Items', value: String(this.productService.lowStockProducts().length), change: 0, trend: 'down' as const, icon: 'warning', color: '#dc2626' },
+      { label: 'Customers', value: String(this.customerService.customers().length), change: 0, trend: 'up' as const, icon: 'people', color: '#ea580c' },
+    ];
+  });
+
   readonly dailySales    = DAILY_SALES;
   readonly categorySales = CATEGORY_SALES;
   readonly paymentSplit  = PAYMENT_SPLIT;
   readonly topProducts   = TOP_PRODUCTS;
   readonly topCustomers  = TOP_CUSTOMERS;
-  readonly stockAlerts   = STOCK_ALERTS;
+
+  // ── Stock alerts from real product data ────────────────────────────────────
+  readonly stockAlerts = computed(() =>
+    this.productService.products()
+      .filter(p => p.stock <= p.minStock)
+      .sort((a, b) => (a.stock / a.minStock) - (b.stock / b.minStock))
+      .map(p => ({
+        sku: p.sku,
+        name: p.name,
+        category: p.category,
+        stock: p.stock,
+        minStock: p.minStock,
+        maxStock: p.maxStock,
+        status: (p.stock <= p.minStock * 0.3 ? 'Critical' : 'Low') as 'Critical' | 'Low',
+        daysLeft: Math.max(1, Math.round((p.stock / Math.max(1, p.minStock)) * 14)),
+        reorderQty: p.maxStock - p.stock,
+        lastPurchaseRate: p.purchasePrice,
+        reorderValue: (p.maxStock - p.stock) * p.purchasePrice,
+      }))
+  );
 
   // ── Tab ───────────────────────────────────────────────────────────────────
   activeTab = signal<'sales' | 'products' | 'customers' | 'stock'>('sales');
@@ -90,13 +129,14 @@ export class Reports {
 
   readonly filteredAlerts = computed(() => {
     const f = this.stockFilter();
-    if (f === 'all') return this.stockAlerts;
-    return this.stockAlerts.filter(a => a.status === f);
+    const alerts = this.stockAlerts();
+    if (f === 'all') return alerts;
+    return alerts.filter(a => a.status === f);
   });
 
-  readonly criticalCount = this.stockAlerts.filter(a => a.status === 'Critical').length;
-  readonly lowCount      = this.stockAlerts.filter(a => a.status === 'Low').length;
-  readonly totalReorderValue = this.stockAlerts.reduce((s, a) => s + a.reorderValue, 0);
+  readonly criticalCount = computed(() => this.stockAlerts().filter(a => a.status === 'Critical').length);
+  readonly lowCount      = computed(() => this.stockAlerts().filter(a => a.status === 'Low').length);
+  readonly totalReorderValue = computed(() => this.stockAlerts().reduce((s, a) => s + a.reorderValue, 0));
 
   // ── Helpers ───────────────────────────────────────────────────────────────
   toast = signal('');

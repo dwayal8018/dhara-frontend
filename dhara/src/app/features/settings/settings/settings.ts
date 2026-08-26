@@ -118,6 +118,41 @@ export class Settings {
 
   saveAppearance() { this.showToast('Appearance preferences saved.'); }
 
+  // ── Reset Demo Data ───────────────────────────────────────────────────────
+  showResetConfirm = signal(false);
+
+  resetDemoData() {
+    // Clear ALL DHARA localStorage keys including fresh_start flag
+    const keys = Object.keys(localStorage).filter(k => k.startsWith('dh_'));
+    for (const key of keys) {
+      localStorage.removeItem(key);
+    }
+    // Explicitly ensure fresh_start is removed so demo data seeds
+    localStorage.removeItem('dh_fresh_start');
+    this.showResetConfirm.set(false);
+    this.showToast('All data cleared. Reloading with fresh demo data...');
+    setTimeout(() => window.location.reload(), 1500);
+  }
+
+  clearAndStartFresh() {
+    // Clear ALL data and explicitly store empty arrays so services don't re-seed
+    const keys = Object.keys(localStorage).filter(k => k.startsWith('dh_'));
+    for (const key of keys) {
+      localStorage.removeItem(key);
+    }
+    // Explicitly save empty data so services won't fall back to mock
+    localStorage.setItem('dh_products', '[]');
+    localStorage.setItem('dh_customers', '[]');
+    localStorage.setItem('dh_khata_entries', '[]');
+    localStorage.setItem('dh_suppliers', '[]');
+    localStorage.setItem('dh_supplier_transactions', '[]');
+    localStorage.setItem('dh_purchases', '[]');
+    localStorage.setItem('dh_invoices', '[]');
+    this.showResetConfirm.set(false);
+    this.showToast('All data cleared. Starting fresh...');
+    setTimeout(() => window.location.reload(), 1500);
+  }
+
   // ── Toast ─────────────────────────────────────────────────────────────────
   toast = signal('');
 

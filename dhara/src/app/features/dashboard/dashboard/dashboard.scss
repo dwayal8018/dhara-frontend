@@ -151,6 +151,19 @@
 
   &.up   { color: #16a34a; background: #dcfce7; }
   &.down { color: #dc2626; background: #fee2e2; }
+  &.live {
+    color: #16a34a;
+    background: #dcfce7;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    animation: pulse-live 2s infinite;
+  }
+}
+
+@keyframes pulse-live {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
 }
 
 /* ── Panel / Quick Actions ───────────────── */
@@ -766,4 +779,32 @@ tbody tr:hover { background: #f8fafc; }
 
   &:hover { background: var(--dh-primary-hover, #1d4ed8); }
   .material-symbols-outlined { font-size: 16px; }
+}
+
+/* ─── Empty States ─────────────────────────────────────────────────────────── */
+.empty-cell {
+  text-align: center;
+  padding: 24px 16px;
+  color: var(--dh-text-muted, #94a3b8);
+  font-size: 13px;
+  font-style: italic;
+}
+
+.empty-cell-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 24px 16px;
+  color: var(--dh-text-muted, #94a3b8);
+  font-size: 13px;
+
+  .material-symbols-outlined {
+    font-size: 32px;
+    opacity: 0.5;
+  }
+
+  p {
+    margin: 0;
+  }
 }

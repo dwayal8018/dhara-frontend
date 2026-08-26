@@ -15,15 +15,15 @@
 
   <!-- KPI CARDS — clickable -->
   <section class="stats">
-    @for(card of stats; track card.id) {
+    @for(card of stats(); track card.id) {
       <button class="stat-card" (click)="onCardClick(card.id)" title="Click to explore {{ card.title }}">
         <div class="stat-card__top">
           <div class="stat-card__icon" [style.background]="card.color + '20'">
             <span class="material-symbols-outlined" [style.color]="card.color">{{ card.icon }}</span>
           </div>
-          <span class="trend" [class.up]="card.trend === 'up'" [class.down]="card.trend === 'down'">
-            @if(card.trend === 'up') { ↑ } @else { ↓ }
-            {{ card.change }}%
+          <span class="trend live">
+            <span class="material-symbols-outlined" style="font-size:12px">circle</span>
+            Live
           </span>
         </div>
         <p class="stat-card__label">{{ card.title }}</p>
@@ -66,7 +66,7 @@
       <div class="card__header">
         <h3>Low Stock Products</h3>
         <button class="card__badge card__badge--link" (click)="navigate('/inventory')">
-          {{ lowStock.length }} Items →
+          {{ lowStock().length }} Items →
         </button>
       </div>
       <div class="table-wrap">
@@ -80,13 +80,15 @@
             </tr>
           </thead>
           <tbody>
-            @for(item of lowStock; track item.id) {
+            @for(item of lowStock(); track item.id) {
               <tr>
                 <td>{{ item.product }}</td>
                 <td><span class="tag">{{ item.category }}</span></td>
                 <td><span class="badge danger">{{ item.stock }}</span></td>
                 <td class="muted">{{ item.threshold }}</td>
               </tr>
+            } @empty {
+              <tr><td colspan="4" class="empty-cell">All products are well-stocked</td></tr>
             }
           </tbody>
         </table>
@@ -102,7 +104,7 @@
         </button>
       </div>
       <div class="borrower-list">
-        @for(item of borrowers; track item.id) {
+        @for(item of borrowers(); track item.id) {
           <button class="borrower" (click)="openBorrower(item.phone)"
             title="View {{ item.name }}'s balance sheet">
             <div class="borrower__info">
@@ -116,6 +118,11 @@
               <span class="material-symbols-outlined borrower__arrow">chevron_right</span>
             </div>
           </button>
+        } @empty {
+          <div class="empty-cell-block">
+            <span class="material-symbols-outlined">sentiment_satisfied</span>
+            <p>No outstanding balances — all clear!</p>
+          </div>
         }
       </div>
     </div>
@@ -144,7 +151,7 @@
           </tr>
         </thead>
         <tbody>
-          @for(tx of transactions; track tx.id) {
+          @for(tx of transactions(); track tx.id) {
             <tr>
               <td class="mono">{{ tx.invoice }}</td>
               <td>{{ tx.customer }}</td>
@@ -166,6 +173,8 @@
               </td>
               <td class="muted">{{ tx.date }}</td>
             </tr>
+          } @empty {
+            <tr><td colspan="6" class="empty-cell">No transactions yet — make your first sale!</td></tr>
           }
         </tbody>
       </table>
@@ -405,7 +414,7 @@
             </tr>
           </thead>
           <tbody>
-            @for(m of monthlyRevenue; track m.month; let last = $last) {
+            @for(m of monthlyRevenue(); track m.month; let last = $last) {
               <tr [class.current-month]="last">
                 <td class="month-cell">
                   {{ m.month }}

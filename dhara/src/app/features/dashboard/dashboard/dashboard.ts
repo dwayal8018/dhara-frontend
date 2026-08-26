@@ -1,9 +1,14 @@
 import { ChangeDetectionStrategy, Component, inject, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { DASHBOARD_STATS, QUICK_ACTIONS, LOW_STOCK, BORROWERS, TRANSACTIONS } from './dashboard.data';
+import { QUICK_ACTIONS } from './dashboard.data';
 import { AuthService } from '../../../core/services/auth.service';
 import { AppSettingsService } from '../../../core/services/app-settings.service';
+import { ProductService } from '../../../core/services/product.service';
+import { SalesService } from '../../../core/services/sales.service';
+import { CustomerService } from '../../../core/services/customer.service';
+import { SupplierService } from '../../../core/services/supplier.service';
+import { PurchaseService } from '../../../core/services/purchase.service';
 
 export type DrilldownType =
   | 'pending-invoices'
@@ -54,6 +59,11 @@ export class Dashboard {
   private readonly auth     = inject(AuthService);
   private readonly settings = inject(AppSettingsService);
   private readonly router   = inject(Router);
+  private readonly productService  = inject(ProductService);
+  private readonly salesService    = inject(SalesService);
+  private readonly customerService = inject(CustomerService);
+  private readonly supplierService = inject(SupplierService);
+  private readonly purchaseService = inject(PurchaseService);
 
   readonly today     = new Date();
   readonly shopName  = computed(() => this.settings.shop().shopName);
@@ -63,12 +73,65 @@ export class Dashboard {
   });
   readonly monthlyTarget = 1500000;
 
-  readonly stats        = DASHBOARD_STATS;
+  // ── Dynamic stats from services ───────────────────────────────────────────
+  readonly stats = computed(() => [
+    { id: 1, title: "Today's Sales", value: '₹' + this.salesService.todaysRevenue().toLocaleString('en-IN'), change: 0, trend: 'up' as const, icon: 'shopping_cart', color: '#2563eb' },
+    { id: 2, title: "Today's Profit", value: '₹' + Math.round(this.salesService.monthlyProfit() / 30).toLocaleString('en-IN'), change: 0, trend: 'up' as const, icon: 'payments', color: '#16a34a' },
+    { id: 3, title: 'Outstanding', value: '₹' + this.customerService.totalOutstanding().toLocaleString('en-IN'), change: 0, trend: 'down' as const, icon: 'account_balance_wallet', color: '#ea580c' },
+    { id: 4, title: 'Low Stock', value: this.productService.lowStockProducts().length + ' Items', change: 0, trend: 'down' as const, icon: 'inventory_2', color: '#dc2626' },
+    { id: 5, title: 'Cash Available', value: '₹' + this.salesService.todaysCollected().toLocaleString('en-IN'), change: 0, trend: 'up' as const, icon: 'local_atm', color: '#9333ea' },
+    { id: 6, title: 'Pending Invoices', value: this.salesService.pendingInvoices().length + ' Bills', change: 0, trend: 'down' as const, icon: 'receipt_long', color: '#0ea5e9' },
+    { id: 7, title: "Today's Purchases", value: '₹' + this.purchaseService.thisMonthValue().toLocaleString('en-IN'), change: 0, trend: 'up' as const, icon: 'shopping_bag', color: '#f59e0b' },
+    { id: 8, title: 'Monthly Revenue', value: '₹' + this.salesService.monthlyRevenue().toLocaleString('en-IN'), change: 0, trend: 'up' as const, icon: 'trending_up', color: '#06b6d4' },
+    { id: 9, title: 'Monthly Profit', value: '₹' + Math.round(this.salesService.monthlyProfit()).toLocaleString('en-IN'), change: 0, trend: 'up' as const, icon: 'bar_chart', color: '#8b5cf6' },
+    { id: 10, title: 'Supplier Dues', value: '₹' + this.supplierService.totalDuesPayable().toLocaleString('en-IN'), change: 0, trend: 'down' as const, icon: 'local_shipping', color: '#ef4444' }
+  ]);
+
   readonly quickActions = QUICK_ACTIONS;
-  readonly lowStock     = LOW_STOCK;
-  readonly borrowers    = BORROWERS;
-  readonly transactions = TRANSACTIONS;
-  readonly monthlyRevenue = MONTHLY_REVENUE;
+
+  // ── Low stock from real product data ──────────────────────────────────────
+  readonly lowStock = computed(() =>
+    this.productService.lowStockProducts().map(p => ({
+      id: p.id,
+      product: p.name,
+      category: p.category,
+      stock: p.stock,
+      threshold: p.minStock,
+    }))
+  );
+
+  // ── Borrowers from real customer data ─────────────────────────────────────
+  readonly borrowers = computed(() =>
+    this.customerService.customers()
+      .filter(c => c.outstanding > 0)
+      .sort((a, b) => b.outstanding - a.outstanding)
+      .slice(0, 20)
+      .map(c => ({
+        id: c.id,
+        name: c.name,
+        phone: c.phone,
+        amount: c.outstanding,
+        dueDays: c.overduedays,
+      }))
+  );
+
+  // ── Recent transactions from real invoice data ────────────────────────────
+  readonly transactions = computed(() =>
+    this.salesService.invoices().slice(0, 20).map((inv, i) => ({
+      id: inv.id,
+      customer: inv.customer,
+      invoice: inv.invoice,
+      amount: inv.total,
+      status: (inv.status === 'Paid' ? 'Paid' : 'Pending') as 'Paid' | 'Pending',
+      type: 'Sale' as 'Sale' | 'Return' | 'Purchase',
+      date: inv.time,
+    }))
+  );
+
+  readonly monthlyRevenue = computed(() => {
+    // Return a simple summary from available data
+    return [{ month: 'Current', revenue: this.salesService.monthlyRevenue(), profit: Math.round(this.salesService.monthlyProfit()), orders: this.salesService.invoices().length }];
+  });
 
   readonly smartSuggestions = [
     'PVC Pipe 1 inch demand increased by 28% this week — consider reordering soon.',
@@ -87,6 +150,9 @@ export class Dashboard {
     3: '/customers',   // Outstanding
     4: '/inventory',   // Low Stock
     5: '/finance',     // Cash Available
+    6: '/sales',       // Pending Invoices
+    7: '/purchases',   // Today's Purchases
+    8: '/reports',     // Monthly Revenue
     9: '/reports',     // Monthly Profit
     10: '/suppliers',  // Supplier Dues
   };
@@ -94,9 +160,6 @@ export class Dashboard {
   activeDrilldown = signal<DrilldownType>(null);
 
   onCardClick(id: number) {
-    if (id === 6) { this.activeDrilldown.set('pending-invoices'); return; }
-    if (id === 7) { this.activeDrilldown.set('purchases');        return; }
-    if (id === 8) { this.activeDrilldown.set('monthly-revenue'); return; }
     const route = this.CARD_ROUTES[id];
     if (route) this.router.navigate([route]);
   }
@@ -108,7 +171,7 @@ export class Dashboard {
   pendingRange = signal<DateRange>('Today');
 
   readonly pendingInvoiceGroups = computed(() => {
-    const pending = this.transactions.filter(t => t.status === 'Pending' && t.type === 'Sale');
+    const pending = this.transactions().filter(t => t.status === 'Pending' && t.type === 'Sale');
     return DATE_RANGES.map(range => ({
       range,
       items: this._filterByRange(pending, range),
@@ -124,7 +187,7 @@ export class Dashboard {
   purchaseRange = signal<PurchaseRange>('Today');
 
   readonly purchaseGroups = computed(() => {
-    const purchases = this.transactions.filter(t => t.type === 'Purchase');
+    const purchases = this.transactions().filter(t => t.type === 'Purchase');
     return PURCHASE_RANGES.map(range => ({
       range,
       items: this._filterByRange(purchases, range),
@@ -136,10 +199,13 @@ export class Dashboard {
   );
 
   // ── Monthly Revenue drilldown ─────────────────────────────────────────────
-  readonly maxRevenue = Math.max(...MONTHLY_REVENUE.map(m => m.revenue));
+  readonly maxRevenue = computed(() => {
+    const rev = this.monthlyRevenue();
+    return rev.length > 0 ? Math.max(...rev.map(m => m.revenue)) : 1;
+  });
 
   revBarPct(val: number): number {
-    return Math.round((val / this.maxRevenue) * 100);
+    return Math.round((val / this.maxRevenue()) * 100);
   }
 
   // ── Borrower click → Customers page ──────────────────────────────────────
@@ -159,20 +225,18 @@ export class Dashboard {
   }
 
   totalBorrowing(): number {
-    return this.borrowers.reduce((sum, b) => sum + b.amount, 0);
+    return this.borrowers().reduce((sum, b) => sum + b.amount, 0);
   }
 
   totalSales(): number {
-    return this.transactions
-      .filter(t => t.type === 'Sale' && t.status === 'Paid')
-      .reduce((sum, t) => sum + t.amount, 0);
+    return this.salesService.monthlyRevenue();
   }
 
   progressPercent(): number {
     return Math.round((this.totalSales() / this.monthlyTarget) * 100);
   }
 
-  groupTotal(items: typeof this.transactions): number {
+  groupTotal(items: { amount: number }[]): number {
     return items.reduce((s, t) => s + t.amount, 0);
   }
 
@@ -181,7 +245,7 @@ export class Dashboard {
   // ── Private: filter mock data by date range ───────────────────────────────
   // Because mock data uses relative time strings (e.g. "09:30 AM") we bucket
   // deterministically: first item = today, next 2 = yesterday, etc.
-  private _filterByRange(list: typeof this.transactions, range: DateRange | PurchaseRange) {
+  private _filterByRange(list: { id: number; customer: string; invoice: string; amount: number; status: string; type: string; date: string }[], range: DateRange | PurchaseRange) {
     // Mock: assign ranges based on position so the UI always shows data
     if (range === 'Today')      return list.filter((_, i) => i < 3);
     if (range === 'Yesterday')  return list.filter((_, i) => i >= 3 && i < 6);

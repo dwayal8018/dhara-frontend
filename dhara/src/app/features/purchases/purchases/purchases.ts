@@ -1,10 +1,10 @@
-import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import {
-  PURCHASE_ORDERS, PURCHASE_STATS, SUPPLIERS, CATALOGUE,
-  PurchaseOrder, PurchaseItem, CatProduct, PaymentMode, PaymentStatus
-} from './purchases.data';
+import { PurchaseOrder, PurchaseItem, CatProduct, PaymentMode, PaymentStatus } from './purchases.data';
+import { PurchaseService } from '../../../core/services/purchase.service';
+import { ProductService } from '../../../core/services/product.service';
+import { SupplierService } from '../../../core/services/supplier.service';
 
 export interface CartLine {
   product: CatProduct;
@@ -22,14 +22,22 @@ export interface CartLine {
 })
 export class Purchases {
 
+  private readonly purchaseService = inject(PurchaseService);
+  private readonly productService = inject(ProductService);
+  private readonly supplierService = inject(SupplierService);
+
   readonly Math  = Math;
   readonly today = new Date();
 
-  // ── Static data ──────────────────────────────────────────────────────────
-  readonly stats     = PURCHASE_STATS;
-  readonly orders    = PURCHASE_ORDERS;
-  readonly suppliers = SUPPLIERS;
-  readonly catalogue = CATALOGUE;
+  // ── Data from services ────────────────────────────────────────────────────
+  readonly stats     = computed(() => this.purchaseService.stats());
+  readonly orders    = computed(() => this.purchaseService.orders());
+  readonly suppliers = computed(() => this.supplierService.suppliers());
+  readonly catalogue = computed<CatProduct[]>(() =>
+    this.productService.products().map(p => ({
+      id: p.id, sku: p.sku, name: p.name, unit: p.unit, lastRate: p.purchasePrice, gst: p.gst
+    }))
+  );
   readonly paymentModes: PaymentMode[] = ['Cash', 'UPI', 'Cheque', 'Bank Transfer', 'Credit'];
 
   // ── Tab state ─────────────────────────────────────────────────────────────
@@ -44,7 +52,7 @@ export class Purchases {
     const q   = this.search().toLowerCase();
     const st  = this.statusFilter();
     const pay = this.paymentFilter();
-    return this.orders.filter(o => {
+    return this.orders().filter(o => {
       const matchQ   = !q || o.poNumber.toLowerCase().includes(q)
                           || o.supplier.toLowerCase().includes(q)
                           || o.invoiceRef.toLowerCase().includes(q);
@@ -84,6 +92,7 @@ export class Purchases {
     if (this.payAmount() <= 0) { this.showToast('Enter a valid amount.'); return; }
     const due = o.grandTotal - o.paid;
     if (this.payAmount() > due) { this.showToast('Amount exceeds outstanding due.'); return; }
+    this.purchaseService.recordPayment(o.id, this.payAmount(), this.payMode());
     this.showToast(`₹${this.payAmount().toLocaleString('en-IN')} paid to ${o.supplier} for ${o.poNumber}.`);
     this.showPayModal.set(false);
   }
@@ -99,8 +108,9 @@ export class Purchases {
 
   readonly filteredCatalogue = computed(() => {
     const q = this.productSearch().toLowerCase().trim();
-    if (!q) return this.catalogue;
-    return this.catalogue.filter(p =>
+    const cat = this.catalogue();
+    if (!q) return cat;
+    return cat.filter(p =>
       p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q)
     );
   });
@@ -144,8 +154,30 @@ export class Purchases {
   savePurchaseOrder() {
     if (!this.newSupplier()) { this.showToast('Select a supplier.'); return; }
     if (this.cart().length === 0) { this.showToast('Add at least one product.'); return; }
-    const nextNum = 'PUR-0242';
-    this.showToast(`Purchase order ${nextNum} created for ${this.newSupplier()} — ₹${Math.round(this.newTotal()).toLocaleString('en-IN')}`);
+
+    const supplier = this.suppliers().find(s => s.name === this.newSupplier());
+    if (!supplier) { this.showToast('Supplier not found.'); return; }
+
+    const order = this.purchaseService.createPurchaseOrder({
+      supplier: supplier.name,
+      supplierId: supplier.id,
+      supplierPhone: supplier.phone,
+      dueDate: this.newDueDate(),
+      items: this.cart().map(c => ({
+        productId: c.product.id,
+        sku: c.product.sku,
+        name: c.product.name,
+        unit: c.product.unit,
+        qty: c.qty,
+        rate: c.rate,
+        gst: c.product.gst,
+      })),
+      paymentMode: this.newPayMode(),
+      notes: this.newNotes(),
+      invoiceRef: this.newInvoiceRef(),
+    });
+
+    this.showToast(`Purchase order ${order.poNumber} created for ${supplier.name} — ₹${Math.round(order.grandTotal).toLocaleString('en-IN')}`);
     this.cart.set([]);
     this.newSupplier.set('');
     this.newDueDate.set('');

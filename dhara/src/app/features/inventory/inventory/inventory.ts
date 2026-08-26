@@ -1,8 +1,10 @@
-import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { PRODUCTS, INVENTORY_STATS, CATEGORIES, Product, Category } from './inventory.data';
+import { CATEGORIES, Product, Category } from './inventory.data';
 import { Router } from '@angular/router';
+import { ProductService } from '../../../core/services/product.service';
+import { exportToCsv } from '../../../core/utils/export-csv';
 
 export type SortKey = 'name' | 'stock' | 'price' | 'margin';
 export type SortDir = 'asc' | 'desc';
@@ -17,8 +19,35 @@ export type SortDir = 'asc' | 'desc';
 })
 export class Inventory {
 
-  readonly stats = INVENTORY_STATS;
+  private readonly productService = inject(ProductService);
+
   readonly allCategories = CATEGORIES;
+
+  // ── Dynamic stats computed from real product data ─────────────────────────
+  readonly stats = computed(() => {
+    const products = this.productService.products();
+    const total = products.length;
+    const lowStock = products.filter(p => p.stock > 0 && p.stock <= p.minStock).length;
+    const outOfStock = products.filter(p => p.stock === 0).length;
+    const totalValue = products.reduce((s, p) => s + p.stock * p.purchasePrice, 0);
+    return [
+      { label: 'Total Products', value: String(total), icon: 'inventory_2', color: '#2563eb' },
+      { label: 'Low Stock', value: String(lowStock), icon: 'warning', color: '#f59e0b' },
+      { label: 'Out of Stock', value: String(outOfStock), icon: 'block', color: '#dc2626' },
+      { label: 'Total Value', value: '₹' + totalValue.toLocaleString('en-IN'), icon: 'payments', color: '#16a34a' },
+    ];
+  });
+
+  // ── Dynamic category counts ───────────────────────────────────────────────
+  readonly dynamicCategories = computed(() => {
+    const catMap = this.productService.categories();
+    const totalCount = this.productService.totalCount();
+    return this.allCategories.map(c =>
+      c.id === 'all'
+        ? { ...c, count: totalCount }
+        : { ...c, count: catMap.get(c.label) ?? 0 }
+    );
+  });
 
   searchQuery      = signal('');
   selectedCategory = signal('all');
@@ -66,7 +95,7 @@ export class Inventory {
 
   // ── Filtered + within-category sorted list ───────────────────────────────
   readonly products = computed(() => {
-    let list = [...PRODUCTS];
+    let list = [...this.productService.products()];
     const q      = this.searchQuery().toLowerCase();
     const cat    = this.selectedCategory();
     const status = this.selectedStatus();
@@ -156,8 +185,22 @@ export class Inventory {
     if (!f.name || !f.sku) { this.showToast('Name and SKU are required.'); return; }
     const editing = this.editingProduct();
     if (editing) {
+      this.productService.updateProduct(editing.id, {
+        name: f.name, sku: f.sku, category: f.category, brand: f.brand,
+        unit: f.unit, purchasePrice: f.purchasePrice, sellingPrice: f.sellingPrice,
+        wholesalePrice: f.wholesalePrice, gst: f.gst, stock: f.stock,
+        minStock: f.minStock, maxStock: f.maxStock,
+        warehouse: f.warehouse, rack: f.rack, barcode: f.barcode
+      });
       this.showToast(`"${f.name}" updated successfully.`);
     } else {
+      this.productService.addProduct({
+        name: f.name, sku: f.sku, category: f.category, brand: f.brand,
+        unit: f.unit, purchasePrice: f.purchasePrice, sellingPrice: f.sellingPrice,
+        wholesalePrice: f.wholesalePrice, gst: f.gst, stock: f.stock,
+        minStock: f.minStock, maxStock: f.maxStock,
+        warehouse: f.warehouse, rack: f.rack, barcode: f.barcode, image: undefined
+      });
       this.showToast(`"${f.name}" added to inventory.`);
     }
     this.showAddModal.set(false);
@@ -165,6 +208,7 @@ export class Inventory {
 
   deleteProduct(p: Product) {
     if (confirm(`Delete "${p.name}" (${p.sku})? This action cannot be undone.`)) {
+      this.productService.deleteProduct(p.id);
       this.showToast(`"${p.name}" removed from inventory.`);
     }
   }
@@ -194,4 +238,27 @@ export class Inventory {
   }
 
   trackById(_: number, item: Product) { return item.id; }
+
+  exportInventory() {
+    const products = this.products();
+    if (products.length === 0) { this.showToast('No products to export.'); return; }
+    exportToCsv('inventory_' + new Date().toISOString().slice(0, 10) + '.csv', products as any, [
+      { key: 'sku', label: 'SKU' },
+      { key: 'name', label: 'Product Name' },
+      { key: 'category', label: 'Category' },
+      { key: 'brand', label: 'Brand' },
+      { key: 'unit', label: 'Unit' },
+      { key: 'purchasePrice', label: 'Purchase Price' },
+      { key: 'sellingPrice', label: 'Selling Price' },
+      { key: 'wholesalePrice', label: 'Wholesale Price' },
+      { key: 'gst', label: 'GST %' },
+      { key: 'stock', label: 'Current Stock' },
+      { key: 'minStock', label: 'Min Stock' },
+      { key: 'status', label: 'Status' },
+      { key: 'warehouse', label: 'Warehouse' },
+      { key: 'rack', label: 'Rack' },
+      { key: 'barcode', label: 'Barcode' },
+    ]);
+    this.showToast('Inventory exported as CSV.');
+  }
 }

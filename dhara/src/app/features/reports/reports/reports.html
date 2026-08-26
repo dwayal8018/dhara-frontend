@@ -29,7 +29,7 @@
 
   <!-- KPI STATS (always visible) -->
   <div class="stats-row">
-    @for(s of stats; track s.label) {
+    @for(s of stats(); track s.label) {
       <div class="stat-card">
         <div class="stat-card__top">
           <div class="stat-card__icon" [style.background]="s.color + '18'">
@@ -319,15 +319,15 @@
     <div class="alert-summary">
       <div class="alert-pill danger">
         <span class="material-symbols-outlined">error</span>
-        <span>{{ criticalCount }} Critical</span>
+        <span>{{ criticalCount() }} Critical</span>
       </div>
       <div class="alert-pill warning">
         <span class="material-symbols-outlined">warning</span>
-        <span>{{ lowCount }} Low Stock</span>
+        <span>{{ lowCount() }} Low Stock</span>
       </div>
       <div class="alert-pill info">
         <span class="material-symbols-outlined">currency_rupee</span>
-        <span>Reorder Value: ₹{{ totalReorderValue | number }}</span>
+        <span>Reorder Value: ₹{{ totalReorderValue() | number }}</span>
       </div>
       <div class="alert-filters">
         @for(f of ['all','Critical','Low']; track f) {

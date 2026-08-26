@@ -1,10 +1,8 @@
-import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import {
-  SUPPLIERS, SUPPLIER_TRANSACTIONS, SUPPLIER_STATS,
-  Supplier, SupplierTransaction, PaymentMode
-} from './suppliers.data';
+import { Supplier, SupplierTransaction, PaymentMode } from './suppliers.data';
+import { SupplierService } from '../../../core/services/supplier.service';
 
 @Component({
   selector: 'app-suppliers',
@@ -16,10 +14,11 @@ import {
 })
 export class Suppliers {
 
-  // ── Static data ──────────────────────────────────────────────────────────
-  readonly stats        = SUPPLIER_STATS;
-  readonly allSuppliers = SUPPLIERS;
-  readonly allTx        = SUPPLIER_TRANSACTIONS;
+  private readonly supplierService = inject(SupplierService);
+
+  // ── Data from service ─────────────────────────────────────────────────────
+  readonly stats        = computed(() => this.supplierService.stats());
+  readonly allSuppliers = computed(() => this.supplierService.suppliers());
   readonly paymentModes: PaymentMode[] = ['Cash', 'UPI', 'Cheque', 'Bank Transfer', 'Credit'];
 
   // ── List state ────────────────────────────────────────────────────────────
@@ -31,7 +30,7 @@ export class Suppliers {
   readonly filteredSuppliers = computed(() => {
     const q      = this.search().toLowerCase();
     const status = this.statusFilter();
-    let list     = this.allSuppliers;
+    let list     = this.allSuppliers();
     if (q) list = list.filter(s =>
       s.name.toLowerCase().includes(q) ||
       s.phone.includes(q) ||
@@ -49,14 +48,12 @@ export class Suppliers {
   });
 
   readonly selected = computed(() =>
-    this.allSuppliers.find(s => s.id === this.selectedId()) ?? this.allSuppliers[0]
+    this.allSuppliers().find(s => s.id === this.selectedId()) ?? this.allSuppliers()[0]
   );
 
   // ── Transaction ledger for selected supplier ──────────────────────────────
   readonly ledger = computed(() =>
-    this.allTx
-      .filter(t => t.supplierId === this.selectedId())
-      .sort((a, b) => b.id - a.id)
+    this.supplierService.getLedger(this.selectedId())
   );
 
   selectSupplier(id: number) { this.selectedId.set(id); }
@@ -82,6 +79,7 @@ export class Suppliers {
     if (!s) return;
     if (this.payAmount() <= 0)              { this.showToast('Enter a valid amount.'); return; }
     if (this.payAmount() > s.outstanding)   { this.showToast('Amount exceeds outstanding dues.'); return; }
+    this.supplierService.recordPayment(s.id, this.payAmount(), this.payMode(), this.payRef());
     this.showToast(`₹${this.payAmount().toLocaleString('en-IN')} paid to ${s.name} via ${this.payMode()}.`);
     this.showPayModal.set(false);
   }
@@ -103,6 +101,17 @@ export class Suppliers {
       this.showToast('Supplier name and phone are required.');
       return;
     }
+    this.supplierService.addSupplier({
+      name: this.addName(),
+      contactPerson: this.addContact(),
+      phone: this.addPhone(),
+      email: this.addEmail() || undefined,
+      address: this.addAddress(),
+      area: this.addArea(),
+      gst: this.addGst(),
+      creditDays: this.addCreditDays(),
+      creditLimit: this.addCreditLimit(),
+    });
     this.showToast(`Supplier "${this.addName()}" added successfully.`);
     this.showAddModal.set(false);
     this.addName.set(''); this.addContact.set(''); this.addPhone.set('');

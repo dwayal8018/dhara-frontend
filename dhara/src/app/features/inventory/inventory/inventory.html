@@ -10,6 +10,9 @@
             <button class="btn btn--outline" (click)="showToast('Exporting products to CSV...')">
                 <span class="material-symbols-outlined">download</span> Export
             </button>
+            <button class="btn btn--outline" (click)="exportInventory()">
+                <span class="material-symbols-outlined">download</span> Export CSV
+            </button>
             <button class="btn btn--outline" (click)="showToast('Import feature coming soon!')">
                 <span class="material-symbols-outlined">upload</span> Import
             </button>
@@ -21,7 +24,7 @@
 
     <!-- KPI STATS -->
     <div class="inv-stats">
-        @for(s of stats; track s.label) {
+        @for(s of stats(); track s.label) {
         <div class="inv-stat">
             <div class="inv-stat__icon" [style.background]="s.color + '20'">
                 <span class="material-symbols-outlined" [style.color]="s.color">{{ s.icon }}</span>
@@ -44,9 +47,9 @@
                 (click)="setCategory('all')">
                 <span class="material-symbols-outlined">apps</span>
                 <span>All Products</span>
-                <span class="cat-count">20</span>
+                <span class="cat-count">{{ dynamicCategories()[0].count }}</span>
             </button>
-            @for(cat of allCategories.slice(1); track cat.id) {
+            @for(cat of dynamicCategories().slice(1); track cat.id) {
             <button class="cat-item" [class.cat-item--active]="selectedCategory() === cat.id"
                 (click)="setCategory(cat.id)">
                 <span class="material-symbols-outlined">{{ cat.icon }}</span>
@@ -179,6 +182,9 @@
                             </td>
                         </tr>
                         }
+                        @empty {
+                        <tr><td colspan="10" style="text-align:center;padding:32px;color:#94a3b8;font-style:italic">No products found. Add your first product to get started!</td></tr>
+                        }
                     </tbody>
                 </table>
             </div>
@@ -213,6 +219,11 @@
                         </div>
                         <div class="prod-sku">{{ p.sku }}</div>
                     </div>
+                </div>
+                } @empty {
+                <div style="grid-column:1/-1;text-align:center;padding:40px;color:#94a3b8;font-style:italic">
+                    <span class="material-symbols-outlined" style="font-size:40px;display:block;margin-bottom:8px;opacity:0.5">inventory_2</span>
+                    No products found. Add your first product to get started!
                 </div>
                 }
             </div>

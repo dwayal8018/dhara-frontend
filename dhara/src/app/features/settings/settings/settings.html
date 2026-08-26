@@ -463,6 +463,19 @@
             <span class="material-symbols-outlined">save</span> Save Appearance
           </button>
         </div>
+
+        <!-- DATA MANAGEMENT -->
+        <div class="section-divider"></div>
+        <h3 class="section-title">
+          <span class="material-symbols-outlined">storage</span>
+          Data Management
+        </h3>
+        <p class="section-desc">Reset all application data for a fresh start or to prepare for a customer demo.</p>
+        <div class="reset-actions">
+          <button class="btn btn--outline btn--danger" (click)="showResetConfirm.set(true)">
+            <span class="material-symbols-outlined">restart_alt</span> Reset Demo Data
+          </button>
+        </div>
       </div>
       }
 
@@ -529,6 +542,45 @@
   </div>
 }
 
+
+<!-- ══ RESET CONFIRM MODAL ═══════════════════════════════════════════════ -->
+@if(showResetConfirm()) {
+  <div class="modal-backdrop" (click)="showResetConfirm.set(false)">
+    <div class="modal modal--small" (click)="$event.stopPropagation()">
+      <div class="modal__header">
+        <h2 class="modal__title">
+          <span class="material-symbols-outlined" style="color:#dc2626">warning</span>
+          Reset Application Data
+        </h2>
+        <button class="modal__close" (click)="showResetConfirm.set(false)">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="modal__body" style="padding:16px 24px">
+        <p style="margin:0 0 16px;font-size:14px;color:#475569">Choose how you want to reset:</p>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <button class="btn btn--outline" (click)="resetDemoData()" style="justify-content:flex-start;gap:12px">
+            <span class="material-symbols-outlined">refresh</span>
+            <div style="text-align:left">
+              <strong>Reset with Demo Data</strong>
+              <div style="font-size:12px;color:#64748b;font-weight:400">Reload sample products, customers, and suppliers</div>
+            </div>
+          </button>
+          <button class="btn btn--outline btn--danger" (click)="clearAndStartFresh()" style="justify-content:flex-start;gap:12px">
+            <span class="material-symbols-outlined">delete_forever</span>
+            <div style="text-align:left">
+              <strong>Start Completely Fresh</strong>
+              <div style="font-size:12px;color:#64748b;font-weight:400">Clear everything — start with zero products, no history</div>
+            </div>
+          </button>
+        </div>
+      </div>
+      <div class="modal__footer">
+        <button class="btn btn--outline" (click)="showResetConfirm.set(false)">Cancel</button>
+      </div>
+    </div>
+  </div>
+}
 
 @if(toast()) {
   <div class="toast">{{ toast() }}</div>

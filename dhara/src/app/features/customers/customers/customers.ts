@@ -2,10 +2,8 @@ import { ChangeDetectionStrategy, Component, computed, signal, inject, OnInit } 
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
-import {
-  CUSTOMERS, KHATA_ENTRIES, CUSTOMER_STATS,
-  Customer, KhataEntry, PaymentMode
-} from './customers.data';
+import { Customer, KhataEntry, PaymentMode } from './customers.data';
+import { CustomerService } from '../../../core/services/customer.service';
 
 @Component({
   selector: 'app-customers',
@@ -18,11 +16,11 @@ import {
 export class Customers implements OnInit {
 
   private readonly route = inject(ActivatedRoute);
+  private readonly customerService = inject(CustomerService);
 
   // ── Data ────────────────────────────────────────────────────────────────
-  readonly stats         = CUSTOMER_STATS;
-  readonly allCustomers  = CUSTOMERS;
-  readonly allEntries    = KHATA_ENTRIES;
+  readonly stats = computed(() => this.customerService.stats());
+  readonly allCustomers = computed(() => this.customerService.customers());
   readonly paymentModes: PaymentMode[] = ['Cash', 'UPI', 'Cheque', 'Bank Transfer'];
 
   // ── Customer list state ──────────────────────────────────────────────────
@@ -35,15 +33,12 @@ export class Customers implements OnInit {
   deepLinked = signal(false);
 
   ngOnInit(): void {
-    // When navigated from dashboard borrower click (?phone=XXXXXXXXXX),
-    // find the matching customer and pre-select them.
     const phone = this.route.snapshot.queryParamMap.get('phone');
     if (phone) {
-      const match = this.allCustomers.find(c => c.phone === phone);
+      const match = this.allCustomers().find(c => c.phone === phone);
       if (match) {
         this.selectedId.set(match.id);
         this.deepLinked.set(true);
-        // Scroll hint: reset status filter to ensure they're visible
         this.statusFilter.set('all');
       }
     }
@@ -52,7 +47,7 @@ export class Customers implements OnInit {
   readonly filteredCustomers = computed(() => {
     const q      = this.search().toLowerCase();
     const status = this.statusFilter();
-    let list     = this.allCustomers;
+    let list     = this.allCustomers();
 
     if (q)           list = list.filter(c =>
       c.name.toLowerCase().includes(q) ||
@@ -70,14 +65,12 @@ export class Customers implements OnInit {
   });
 
   readonly selectedCustomer = computed(() =>
-    this.allCustomers.find(c => c.id === this.selectedId()) ?? this.allCustomers[0]
+    this.allCustomers().find(c => c.id === this.selectedId()) ?? this.allCustomers()[0]
   );
 
   // ── Khata ledger for selected customer ──────────────────────────────────
   readonly ledger = computed(() =>
-    this.allEntries
-      .filter(e => e.customerId === this.selectedId())
-      .sort((a, b) => b.id - a.id)        // newest first
+    this.customerService.getLedger(this.selectedId())
   );
 
   selectCustomer(id: number) { this.selectedId.set(id); }
@@ -103,6 +96,7 @@ export class Customers implements OnInit {
     if (!c) return;
     if (amt <= 0) { this.showToast('Enter a valid amount.'); return; }
     if (amt > c.outstanding) { this.showToast('Amount exceeds outstanding balance.'); return; }
+    this.customerService.recordPayment(c.id, amt, this.payMode(), this.payNotes());
     this.showToast(
       `Payment of ₹${amt.toLocaleString('en-IN')} recorded for ${c.name} via ${this.payMode()}.`
     );
@@ -123,6 +117,14 @@ export class Customers implements OnInit {
       this.showToast('Name and phone are required.');
       return;
     }
+    this.customerService.addCustomer({
+      name: this.addName(),
+      phone: this.addPhone(),
+      address: this.addAddress(),
+      area: this.addArea(),
+      gst: this.addGst() || undefined,
+      creditLimit: this.addCreditLimit(),
+    });
     this.showToast(`Customer "${this.addName()}" added successfully.`);
     this.showAddModal.set(false);
     this.addName.set(''); this.addPhone.set('');

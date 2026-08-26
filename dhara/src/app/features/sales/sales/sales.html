@@ -271,6 +271,9 @@
           </button>
         }
       </div>
+      <button class="btn btn--outline btn--sm" (click)="exportSalesHistory()">
+        <span class="material-symbols-outlined">download</span> Export CSV
+      </button>
     </div>
 
     <!-- Stats row -->
@@ -342,10 +345,10 @@
               </td>
               <td>
                 <div class="row-actions">
-                  <button class="icon-btn" title="Print invoice">
+                  <button class="icon-btn" title="Print invoice" (click)="printSavedInvoice(inv)">
                     <span class="material-symbols-outlined">print</span>
                   </button>
-                  <button class="icon-btn" title="View details">
+                  <button class="icon-btn" title="View details" (click)="openInvoiceDetail(inv)">
                     <span class="material-symbols-outlined">open_in_new</span>
                   </button>
                   @if(inv.status !== 'Paid') {
@@ -474,4 +477,181 @@
 
     </div>
   </div>
+}
+
+<!-- ══ INVOICE DETAIL MODAL ════════════════════════════════════════════════ -->
+@if(showDetailModal()) {
+  <div class="modal-backdrop" (click)="showDetailModal.set(false)">
+    <div class="pay-modal detail-modal" (click)="$event.stopPropagation()">
+
+      <div class="pay-modal__header">
+        <div class="pay-modal__title">
+          <span class="material-symbols-outlined">receipt_long</span>
+          Invoice Details
+        </div>
+        <button class="pay-modal__close" (click)="showDetailModal.set(false)">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      @if(detailInvoice(); as inv) {
+        <div class="pay-modal__summary">
+          <div class="pay-modal__inv-row">
+            <span class="pay-modal__inv-num">{{ inv.invoice }}</span>
+            <span class="pay-modal__customer">{{ inv.customer }}</span>
+            <span class="pay-modal__phone muted">{{ inv.phone }}</span>
+          </div>
+          <div class="detail-meta">
+            <span>{{ inv.date }} &middot; {{ inv.time }}</span>
+            <span class="badge" [class]="statusClass(inv.status)">{{ inv.status }}</span>
+            <span class="mode-tag">
+              <span class="material-symbols-outlined">{{ modeIcon(inv.paymentMode) }}</span>
+              {{ inv.paymentMode }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Line items table -->
+        <div class="detail-items">
+          <table class="detail-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Item</th>
+                <th>Qty</th>
+                <th>Rate</th>
+                <th>Disc%</th>
+                <th>GST%</th>
+                <th>Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for(item of inv.lineItems; track item.productId; let i = $index) {
+                <tr>
+                  <td>{{ i + 1 }}</td>
+                  <td>{{ item.name }} <span class="muted small">({{ item.sku }})</span></td>
+                  <td>{{ item.qty }} {{ item.unit }}</td>
+                  <td>₹{{ item.price | number }}</td>
+                  <td>{{ item.discount }}%</td>
+                  <td>{{ item.gst }}%</td>
+                  <td class="amount">₹{{ (item.qty * item.price * (1 - item.discount / 100)) | number:'1.0-0' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Totals -->
+        <div class="detail-totals">
+          <div class="detail-total-row"><span>Subtotal</span><span>₹{{ inv.subtotal | number }}</span></div>
+          @if(inv.discount > 0) {
+            <div class="detail-total-row muted"><span>Discount ({{ inv.discount }}%)</span><span>-₹{{ (inv.subtotal * inv.discount / 100) | number:'1.0-0' }}</span></div>
+          }
+          <div class="detail-total-row muted"><span>GST</span><span>₹{{ inv.gstAmt | number }}</span></div>
+          <div class="detail-total-row grand"><span>Grand Total</span><span>₹{{ inv.total | number }}</span></div>
+          <div class="detail-total-row"><span>Paid</span><span class="success">₹{{ inv.paid | number }}</span></div>
+          @if(inv.total - inv.paid > 0) {
+            <div class="detail-total-row"><span>Balance Due</span><span class="danger">₹{{ (inv.total - inv.paid) | number:'1.0-0' }}</span></div>
+          }
+        </div>
+
+        @if(inv.notes) {
+          <div class="detail-notes">
+            <strong>Notes:</strong> {{ inv.notes }}
+          </div>
+        }
+
+        <div class="pay-modal__footer">
+          <button class="btn btn--outline" (click)="showDetailModal.set(false)">Close</button>
+          <button class="btn btn--primary" (click)="printSavedInvoice(inv); showDetailModal.set(false)">
+            <span class="material-symbols-outlined">print</span> Print Invoice
+          </button>
+        </div>
+      }
+
+    </div>
+  </div>
+}
+
+<!-- ─── PRINT INVOICE (hidden on screen, shown only in print) ─────────────── -->
+@if(printData()) {
+<div class="print-invoice" id="printInvoice">
+  <div class="print-invoice__header">
+    <div class="print-invoice__shop">
+      <h1>{{ shopProfile().shopName }}</h1>
+      <p>{{ shopProfile().address }}, {{ shopProfile().city }}, {{ shopProfile().state }} - {{ shopProfile().pincode }}</p>
+      <p>Phone: {{ shopProfile().phone }} {{ shopProfile().altPhone ? '/ ' + shopProfile().altPhone : '' }}</p>
+      @if(shopProfile().gst) { <p>GSTIN: {{ shopProfile().gst }}</p> }
+      @if(shopProfile().pan) { <p>PAN: {{ shopProfile().pan }}</p> }
+    </div>
+    <div class="print-invoice__meta">
+      <h2>TAX INVOICE</h2>
+      <p><strong>{{ printData()!.invoice }}</strong></p>
+      <p>Date: {{ printData()!.date }}</p>
+      <p>Time: {{ printData()!.time }}</p>
+    </div>
+  </div>
+
+  <div class="print-invoice__customer">
+    <p><strong>{{ printData()!.customer }}</strong></p>
+    @if(printData()!.phone) { <p>Phone: {{ printData()!.phone }}</p> }
+  </div>
+
+  <table class="print-invoice__table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Item</th>
+        <th>Qty</th>
+        <th>Rate</th>
+        <th>GST%</th>
+        <th>Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for(item of printData()!.lineItems; track item.productId; let i = $index) {
+        <tr>
+          <td>{{ i + 1 }}</td>
+          <td>{{ item.name }} <span style="color:#64748b;font-size:11px">({{ item.sku }})</span></td>
+          <td>{{ item.qty }} {{ item.unit }}</td>
+          <td>₹{{ item.price | number }}</td>
+          <td>{{ item.gst }}%</td>
+          <td>₹{{ (item.qty * item.price * (1 - item.discount / 100)) | number:'1.0-0' }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+
+  <div class="print-invoice__totals">
+    <table>
+      <tr><td>Subtotal</td><td>₹{{ printData()!.subtotal | number:'1.0-0' }}</td></tr>
+      @if(printData()!.discount > 0) {
+        <tr><td>Discount ({{ printData()!.discount }}%)</td><td>-₹{{ (printData()!.subtotal * printData()!.discount / 100) | number:'1.0-0' }}</td></tr>
+      }
+      <tr><td>GST</td><td>₹{{ printData()!.gstAmt | number:'1.0-0' }}</td></tr>
+      <tr class="grand-total"><td>Grand Total</td><td>₹{{ printData()!.total | number:'1.0-0' }}</td></tr>
+    </table>
+  </div>
+
+  <div class="print-invoice__payment">
+    <span>Payment: {{ printData()!.paymentMode }}</span>
+    <span>Paid: ₹{{ printData()!.paid | number:'1.0-0' }}</span>
+    @if(printData()!.total - printData()!.paid > 0) {
+      <span style="color:#dc2626">Balance Due: ₹{{ (printData()!.total - printData()!.paid) | number:'1.0-0' }}</span>
+    }
+  </div>
+
+  @if(printData()!.notes) {
+    <div class="print-invoice__notes">
+      <strong>Notes:</strong> {{ printData()!.notes }}
+    </div>
+  }
+
+  <div class="print-invoice__footer">
+    <p>Thank you for your business!</p>
+    @if(shopProfile().upiId) { <p>UPI: {{ shopProfile().upiId }}</p> }
+    @if(shopProfile().bankName) { <p>Bank: {{ shopProfile().bankName }} | A/C: {{ shopProfile().accountNo }} | IFSC: {{ shopProfile().ifsc }}</p> }
+    <p style="margin-top:8px;color:#94a3b8">Powered by DHARA — Smart Business Management</p>
+  </div>
+</div>
 }

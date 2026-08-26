@@ -885,3 +885,43 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ─── Data Management Section ──────────────────────────────────────────────── */
+.section-divider {
+  border-top: 1px solid var(--border, #e2e8f0);
+  margin: 24px 0 16px;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0 0 8px;
+}
+
+.section-desc {
+  font-size: 13px;
+  color: var(--text-secondary, #64748b);
+  margin: 0 0 16px;
+}
+
+.reset-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.btn--danger {
+  border-color: #fca5a5;
+  color: #dc2626;
+}
+
+.btn--danger:hover {
+  background: #fef2f2;
+  border-color: #dc2626;
+}
+
+.modal--small {
+  max-width: 460px;
+}

@@ -29,7 +29,7 @@
 
   <!-- KPI STATS -->
   <div class="stats-row">
-    @for(s of stats; track s.label) {
+    @for(s of stats(); track s.label) {
       <div class="stat-card">
         <div class="stat-card__icon" [style.background]="s.color + '18'">
           <span class="material-symbols-outlined" [style.color]="s.color">{{ s.icon }}</span>
@@ -105,8 +105,8 @@
         }
         @if(filteredCustomers().length === 0) {
           <div class="empty-list">
-            <span class="material-symbols-outlined">search_off</span>
-            <p>No customers found</p>
+            <span class="material-symbols-outlined">{{ search() ? 'search_off' : 'people' }}</span>
+            <p>{{ search() ? 'No customers match your search' : 'No customers yet — add your first customer!' }}</p>
           </div>
         }
       </div>

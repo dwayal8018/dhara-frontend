@@ -20,7 +20,7 @@
 
   <!-- KPI STATS -->
   <div class="stats-row">
-    @for(s of stats; track s.label) {
+    @for(s of stats(); track s.label) {
       <div class="stat-card">
         <div class="stat-card__icon" [style.background]="s.color + '18'">
           <span class="material-symbols-outlined" [style.color]="s.color">{{ s.icon }}</span>
@@ -101,8 +101,8 @@
               <td>
                 <div class="supplier-cell">
                   <div class="sup-avatar"
-                    [style.background]="avatarColor(suppliers[o.supplierId - 1]?.avatar ?? 'blue') + '20'"
-                    [style.color]="avatarColor(suppliers[o.supplierId - 1]?.avatar ?? 'blue')">
+                    [style.background]="avatarColor(suppliers()[o.supplierId - 1]?.avatar ?? 'blue') + '20'"
+                    [style.color]="avatarColor(suppliers()[o.supplierId - 1]?.avatar ?? 'blue')">
                     {{ supplierInitials(o.supplier) }}
                   </div>
                   <div>
@@ -155,7 +155,7 @@
         <h3>Supplier Outstanding Dues</h3>
       </div>
       <div class="sup-dues-grid">
-        @for(s of suppliers; track s.id) {
+        @for(s of suppliers(); track s.id) {
           <div class="sup-due-card">
             <div class="sup-due-card__avatar"
               [style.background]="avatarColor(s.avatar) + '20'"
@@ -237,7 +237,7 @@
             <label>Supplier <span class="req">*</span></label>
             <select [value]="newSupplier()" (change)="newSupplier.set($any($event.target).value)">
               <option value="">— Select Supplier —</option>
-              @for(s of suppliers; track s.id) {
+              @for(s of suppliers(); track s.id) {
                 <option [value]="s.name">{{ s.name }}</option>
               }
             </select>
