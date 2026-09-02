@@ -1,0 +1,16 @@
+# Netlify configuration for DHARA
+# This file sits at the GIT REPO ROOT (the DHARA folder).
+# The actual Angular project lives in the "dhara" subfolder.
+
+[build]
+  # Run the build inside the dhara subfolder
+  base = "dhara"
+  command = "npm install && npm run build"
+  # Publish path is relative to the base directory (dhara)
+  publish = "dist/dhara/browser"
+
+# SPA fallback — serve index.html for all Angular client-side routes
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
