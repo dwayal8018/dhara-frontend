@@ -1,0 +1,14 @@
+# Netlify configuration for DHARA
+# Used when deploying via Git (optional — drag-and-drop deploy ignores this)
+
+[build]
+  # Build command Netlify runs
+  command = "npm install && npm run build"
+  # Folder Netlify publishes (Angular outputs to dist/dhara/browser)
+  publish = "dist/dhara/browser"
+
+# SPA fallback — serve index.html for all client-side routes
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
