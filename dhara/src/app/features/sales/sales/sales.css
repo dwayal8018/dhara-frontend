@@ -221,6 +221,9 @@
   background: var(--dh-background);
   outline: none;
   transition: border-color 150ms ease;
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
 }
 .field input:focus {
   border-color: var(--dh-primary);
@@ -1061,6 +1064,74 @@ tbody tr:hover { background: #f8fafc; }
   .page-header__right { width: 100%; }
   .tab-toggle { width: 100%; }
   .tab-toggle button { flex: 1; justify-content: center; }
+
+  /* Customer name + phone stack full width (fixes phone overflow) */
+  .customer-row { flex-direction: column; gap: 12px; }
+  .field--sm { flex: 1 1 auto; }
+
+  /* ── Declutter invoice history cards on mobile ──────────────────────────
+     Hide secondary fields; keep only the essentials for quick scanning:
+     Invoice, Customer, Total, Status, Actions. */
+  .history-panel table.responsive-table td[data-label="Phone"],
+  .history-panel table.responsive-table td[data-label="Items"],
+  .history-panel table.responsive-table td[data-label="Subtotal"],
+  .history-panel table.responsive-table td[data-label="GST"],
+  .history-panel table.responsive-table td[data-label="Discount"],
+  .history-panel table.responsive-table td[data-label="Paid"],
+  .history-panel table.responsive-table td[data-label="Mode"],
+  .history-panel table.responsive-table td[data-label="Date"] {
+    display: none;
+  }
+
+  /* Make the invoice card cleaner: prominent invoice + total */
+  .history-panel table.responsive-table tr {
+    padding: 12px 14px;
+  }
+  .history-panel table.responsive-table td[data-label="Invoice"] {
+    font-size: 15px;
+    font-weight: 700;
+  }
+  .history-panel table.responsive-table td[data-label="Total"] {
+    font-size: 16px;
+  }
+  .history-panel table.responsive-table td[data-label="Total"]::before {
+    font-size: 13px;
+  }
+  /* Actions row: buttons spread out for easy tapping */
+  .history-panel table.responsive-table td.actions-cell {
+    padding-top: 12px !important;
+    justify-content: flex-end;
+  }
+  .history-panel table.responsive-table td.actions-cell::before {
+    content: "";
+  }
+  .history-panel .row-actions { gap: 10px; }
+  .history-panel .icon-btn { min-width: 44px; min-height: 44px; }
+
+  /* History toolbar stacks: search, then pills, then export */
+  .history-toolbar { flex-direction: column; align-items: stretch; gap: 10px; }
+  .history-toolbar .toolbar__search { width: 100%; box-sizing: border-box; }
+  .filter-pills { overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; }
+  .filter-pills .pill { flex: 0 0 auto; }
+  .history-toolbar .btn { width: 100%; justify-content: center; }
+
+  /* Payment mode buttons wrap into a 2-col grid, easy to tap */
+  .payment-modes {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .mode-btn { justify-content: center; }
+
+  /* Paid amount + balance stack */
+  .paid-row { flex-direction: column; align-items: stretch; gap: 12px; }
+  .paid-input-wrap { width: 100%; }
+  .paid-input-wrap input { flex: 1; min-width: 0; width: 100%; box-sizing: border-box; }
+  .balance-box { width: 100%; box-sizing: border-box; }
+
+  /* Action buttons stack full width */
+  .action-row { flex-direction: column; align-items: stretch; gap: 8px; }
+  .action-row .btn { width: 100%; justify-content: center; }
 }
 
 /* ─── Invoice Detail Modal ─────────────────────────────────────────────────── */

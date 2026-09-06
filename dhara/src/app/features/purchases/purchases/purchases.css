@@ -615,15 +615,18 @@ input[type="date"] { cursor: pointer; }
   .cart-head { display: none; }
 
   /* Cart row → stacked card */
+  /* Lighter row (not a heavy card) — just a separated line item */
   .cart-row {
     display: block !important;
     position: relative;
-    background: var(--dh-surface);
-    border: 1px solid var(--dh-border);
-    border-radius: 12px;
-    padding: 12px;
-    margin-bottom: 10px;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--dh-border);
+    border-radius: 0;
+    padding: 12px 0;
+    margin-bottom: 0;
   }
+  .cart-row:last-of-type { border-bottom: none; }
   .cart-row__name {
     font-size: 15px;
     font-weight: 600;
@@ -687,6 +690,21 @@ input[type="date"] { cursor: pointer; }
 
   .qty-stepper button { min-width: 36px; min-height: 36px; }
   .qty-stepper input  { min-height: 36px; width: 44px; }
+
+  /* Declutter all-orders cards: keep PO/Supplier/Grand Total/Payment/Actions */
+  .orders-panel table.responsive-table td[data-label="Date"],
+  .orders-panel table.responsive-table td[data-label="Due Date"],
+  .orders-panel table.responsive-table td[data-label="Items"],
+  .orders-panel table.responsive-table td[data-label="Subtotal"],
+  .orders-panel table.responsive-table td[data-label="GST"],
+  .orders-panel table.responsive-table td[data-label="Paid"],
+  .orders-panel table.responsive-table td[data-label="Mode"],
+  .orders-panel table.responsive-table td[data-label="Status"] {
+    display: none;
+  }
+  .orders-panel table.responsive-table td[data-label="PO Number"] { font-weight: 700; }
+  .orders-panel table.responsive-table td.actions-cell::before { content: ""; }
+  .orders-panel .icon-btn { min-width: 44px; min-height: 44px; }
 }
 
 @media (max-width: 400px) {

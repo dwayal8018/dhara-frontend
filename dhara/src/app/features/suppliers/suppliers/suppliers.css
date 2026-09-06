@@ -61,7 +61,7 @@
 }
 .list-search:focus-within { border-color: var(--dh-primary); }
 .list-search .material-symbols-outlined { font-size: 17px; color: var(--dh-text-muted); flex-shrink: 0; }
-.list-search input { flex: 1; border: none; background: transparent; font-size: 13px; font-family: var(--dh-font-body); color: var(--dh-text-primary); outline: none; }
+.list-search input { flex: 1; min-width: 0; border: none; background: transparent; font-size: 13px; font-family: var(--dh-font-body); color: var(--dh-text-primary); outline: none; }
 .list-search input::placeholder { color: var(--dh-text-muted); }
 .clear-btn { border: none; background: transparent; cursor: pointer; display: flex; color: var(--dh-text-muted); padding: 0; }
 .clear-btn .material-symbols-outlined { font-size: 15px; }
@@ -358,10 +358,31 @@ td.negative { color: #16a34a; }
 @media (max-width: 640px) {
   .suppliers  { padding: 14px; }
   .metrics-row { grid-template-columns: 1fr 1fr; gap: 10px; }
-  .profile-card { flex-direction: column; }
-
   .stats-row { grid-template-columns: 1fr 1fr; gap: 10px; }
   .list-panel { height: 340px; }
+
+  /* Profile card stacks, buttons full width */
+  .profile-card { flex-direction: column; align-items: stretch; }
+  .profile-card__left { align-items: center; }
+  .profile-card__right { width: 100%; }
+  .profile-card__right .btn { flex: 1; justify-content: center; }
+
+  /* Search + filters stack full width, no overflow */
+  .list-toolbar { padding: 12px; }
+  .list-search { width: 100%; box-sizing: border-box; }
+  .list-filters { flex-direction: column; }
+  .list-filters select { width: 100%; min-width: 0; box-sizing: border-box; }
+
+  /* Supplier row text truncates instead of overflowing */
+  .supplier-row__info, .sup-row__info { min-width: 0; }
+  .supplier-row__name, .sup-row__name,
+  .supplier-row__meta, .sup-row__meta {
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+
+  /* Stat/metric card values never overflow */
+  .stat-card, .metric-card { min-width: 0; }
+  .stat-card *, .metric-card * { min-width: 0; overflow-wrap: anywhere; }
 
   /* Header + buttons stack */
   .page-header { flex-direction: column; align-items: stretch; gap: 12px; }

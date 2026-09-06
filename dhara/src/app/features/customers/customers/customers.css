@@ -162,6 +162,7 @@
 .list-search .material-symbols-outlined { font-size: 17px; color: var(--dh-text-muted); flex-shrink: 0; }
 .list-search input {
   flex: 1;
+  min-width: 0;
   border: none;
   background: transparent;
   font-size: 13px;
@@ -744,10 +745,28 @@ td.balance { color: var(--dh-text-primary); font-size: 14px; }
   .customers { padding: 14px; }
   .stats-row  { grid-template-columns: 1fr 1fr; gap: 10px; }
   .metrics-row { grid-template-columns: 1fr 1fr; gap: 10px; }
-  .profile-card { flex-direction: column; }
+  .profile-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .profile-card__left { align-items: center; }
+  .profile-card__right { width: 100%; }
+  .profile-card__right .btn { flex: 1; justify-content: center; }
+
+  /* Search box + filters stack full width, don't overflow */
+  .list-toolbar { padding: 12px; }
+  .list-search { width: 100%; box-sizing: border-box; }
+  .list-filters { flex-direction: column; }
+  .list-filters select { width: 100%; min-width: 0; box-sizing: border-box; }
 
   /* Customer list taller so more are visible before scrolling to ledger */
   .list-panel { height: 340px; }
+
+  /* Customer row: allow name to shrink, amount not to overflow */
+  .customer-row__info { min-width: 0; }
+  .customer-row__name,
+  .customer-row__meta { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .customer-row__right { flex-shrink: 0; }
 
   /* Page header + action buttons stack full width */
   .page-header { flex-direction: column; align-items: stretch; gap: 12px; }
@@ -756,6 +775,12 @@ td.balance { color: var(--dh-text-primary); font-size: 14px; }
 
   /* Ledger padding tightens */
   .ledger-header { padding: 12px; }
+}
+
+@media (max-width: 640px) {
+  /* Stat/metric card values must not overflow their card */
+  .stat-card, .metric-card { min-width: 0; }
+  .stat-card *, .metric-card * { min-width: 0; overflow-wrap: anywhere; }
 }
 
 @media (max-width: 400px) {

@@ -170,6 +170,7 @@
 .toolbar__search .material-symbols-outlined { font-size: 18px; color: var(--dh-text-muted); }
 .toolbar__search input {
   flex: 1;
+  min-width: 0;
   border: none;
   background: transparent;
   font-size: 14px;
@@ -458,18 +459,58 @@ tbody tr:hover { background: #f8fafc; }
   .inventory { padding: 14px; }
   .inv-stats { grid-template-columns: 1fr 1fr; gap: 10px; }
 
-  /* Header stacks and buttons go full width for easy tapping */
+  /* Header stacks; buttons sit in a neat row, evenly sized */
   .page-header { flex-direction: column; align-items: stretch; gap: 12px; }
-  .page-header__right { display: flex; flex-wrap: wrap; gap: 8px; }
-  .page-header__right .btn { flex: 1; justify-content: center; min-width: 0; }
+  .page-header__right {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+  }
+  .page-header__right .btn {
+    flex: 1 1 0;
+    min-width: 0;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 8px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+  .page-header__right .btn .material-symbols-outlined { font-size: 18px; }
 
-  /* Toolbar (search / filters / view toggle) stacks */
-  .inv-toolbar { flex-direction: column; align-items: stretch; gap: 10px; }
-  .inv-toolbar .search-box,
-  .inv-toolbar .search-wrap { width: 100%; }
+  /* TOOLBAR: search full width on its own row, filters below */
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .toolbar__search {
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .toolbar__filters {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+  }
+  .toolbar__filters select {
+    flex: 1;
+    min-width: 0;
+  }
+  .view-toggle {
+    flex: 0 0 auto;
+  }
 
-  /* Hide grid/table view toggle — force card view via responsive-table */
-  .view-toggle { align-self: flex-start; }
+  /* Sort bar scrolls horizontally instead of wrapping messily */
+  .sort-bar {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    gap: 8px;
+    padding-bottom: 4px;
+  }
+  .sort-bar__label { flex: 0 0 auto; }
+  .sort-pill { flex: 0 0 auto; white-space: nowrap; }
 }
 
 @media (max-width: 400px) {

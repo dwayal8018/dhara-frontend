@@ -7,17 +7,14 @@
             <p class="page-subtitle">Manage your products, stock levels and pricing</p>
         </div>
         <div class="page-header__right">
-            <button class="btn btn--outline" (click)="showToast('Exporting products to CSV...')">
-                <span class="material-symbols-outlined">download</span> Export
-            </button>
             <button class="btn btn--outline" (click)="exportInventory()">
-                <span class="material-symbols-outlined">download</span> Export CSV
+                <span class="material-symbols-outlined">download</span> <span class="btn-label">Export</span>
             </button>
             <button class="btn btn--outline" (click)="showToast('Import feature coming soon!')">
-                <span class="material-symbols-outlined">upload</span> Import
+                <span class="material-symbols-outlined">upload</span> <span class="btn-label">Import</span>
             </button>
             <button class="btn btn--primary" (click)="openAddModal()">
-                <span class="material-symbols-outlined">add</span> Add Product
+                <span class="material-symbols-outlined">add</span> <span class="btn-label">Add Product</span>
             </button>
         </div>
     </div>

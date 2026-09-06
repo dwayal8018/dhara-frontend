@@ -94,7 +94,7 @@
         </div>
         <div class="field field--sm">
           <label>Phone</label>
-          <input type="text" placeholder="9XXXXXXXXX"
+          <input type="tel" inputmode="numeric" maxlength="10" placeholder="9XXXXXXXXX"
             [value]="customerPhone()"
             (input)="customerPhone.set($any($event.target).value)">
         </div>
