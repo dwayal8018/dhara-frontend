@@ -1,8 +1,16 @@
-<div class="shell" [class.shell--collapsed]="collapsed()">
+<div class="shell" [class.shell--collapsed]="collapsed()" [class.shell--mobile-open]="mobileNavOpen()">
+
+  <!-- Mobile backdrop (only visible when drawer is open on small screens) -->
+  <div class="shell__backdrop" (click)="closeMobileNav()"></div>
 
   <dh-sidebar (collapseChange)="onCollapseToggle($event)"></dh-sidebar>
 
   <div class="shell__main">
+    <!-- Mobile hamburger button -->
+    <button class="shell__hamburger" (click)="toggleMobileNav()" aria-label="Open menu">
+      <span class="material-symbols-outlined">menu</span>
+    </button>
+
     <dh-header [sidebarCollapsed]="collapsed()"></dh-header>
     <main class="shell__content">
       <router-outlet></router-outlet>

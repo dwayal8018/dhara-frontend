@@ -27,3 +27,53 @@
   flex: 1;
   overflow-y: auto;
 }
+
+/* Hamburger — hidden on desktop, shown on mobile */
+.shell__hamburger {
+  display: none;
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 1200;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 10px;
+  background: var(--dh-surface, #fff);
+  box-shadow: var(--dh-shadow-md, 0 4px 12px rgba(0, 0, 0, 0.12));
+  color: var(--dh-text-primary, #0f172a);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+
+  .material-symbols-outlined {
+    font-size: 26px;
+  }
+}
+
+/* Backdrop — hidden by default */
+.shell__backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  z-index: 1050;
+}
+
+/* ── Tablet & Mobile: sidebar becomes an off-canvas drawer ─────────────── */
+@media (max-width: 1024px) {
+  /* Content takes the full width — no sidebar margin */
+  .shell__main {
+    margin-left: 0 !important;
+  }
+
+  /* Show the hamburger button */
+  .shell__hamburger {
+    display: flex;
+  }
+
+  /* When the drawer is open, show the backdrop */
+  .shell--mobile-open .shell__backdrop {
+    display: block;
+  }
+}

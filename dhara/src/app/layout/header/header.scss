@@ -566,3 +566,38 @@
     &:hover { background: #FEF2F2; }
   }
 }
+
+/* ── Mobile / Tablet responsive ────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .topbar {
+    /* Leave room for the fixed hamburger button on the left */
+    padding: 0 16px 0 64px;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 640px) {
+  .topbar {
+    height: 56px;
+    padding: 0 10px 0 60px;
+  }
+
+  /* Hide the name/role text — show only the avatar */
+  .topbar__user-info {
+    display: none;
+  }
+
+  /* Keep dropdown panels inside the viewport */
+  .notif-panel {
+    width: min(360px, calc(100vw - 24px));
+  }
+
+  .profile-panel {
+    width: min(280px, calc(100vw - 24px));
+  }
+
+  /* Search shrinks to fit */
+  .topbar__left {
+    max-width: none;
+  }
+}

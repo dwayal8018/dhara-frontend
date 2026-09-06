@@ -32,3 +32,27 @@
     transform: translateX(-50%) translateY(0);
   }
 }
+
+/* ─── Global Mobile Padding Reduction ──────────────────────────────────────── */
+/* Feature pages use ~28px padding which is too much on phones.
+   These selectors match the common page container class patterns. */
+@media (max-width: 640px) {
+  .dashboard,
+  .inventory,
+  .sales,
+  .purchases,
+  .customers,
+  .suppliers,
+  .finance,
+  .reports,
+  .settings,
+  .page,
+  .page-container {
+    padding: 14px !important;
+  }
+
+  /* Any wide table should scroll horizontally instead of overflowing */
+  table {
+    max-width: 100%;
+  }
+}

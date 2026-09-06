@@ -46,6 +46,8 @@ export class AppSettingsService {
   currency         = signal<string>(load(SK.CURRENCY,      'INR — ₹ Indian Rupee'));
   dateFormat       = signal<string>(load(SK.DATE_FMT,      'DD MMM YYYY'));
   sidebarCollapsed = signal<boolean>(load(SK.SIDEBAR,      false));
+  // Mobile drawer open/closed state (not persisted — always starts closed)
+  mobileNavOpen    = signal<boolean>(false);
   compactTables    = signal<boolean>(load(SK.COMPACT,      false));
   showPriceInGrid  = signal<boolean>(load(SK.PRICE_GRID,   true));
 

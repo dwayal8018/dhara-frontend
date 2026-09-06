@@ -12,7 +12,7 @@
   display: flex;
   flex-direction: column;
   z-index: var(--dh-z-fixed);
-  transition: width var(--dh-normal) var(--dh-ease);
+  transition: width var(--dh-normal) var(--dh-ease), transform var(--dh-normal) var(--dh-ease);
   overflow: hidden;
 
   &--collapsed {
@@ -20,6 +20,30 @@
 
     .sidebar__name { opacity: 0; width: 0; overflow: hidden; }
     .sidebar__label { opacity: 0; width: 0; overflow: hidden; }
+  }
+}
+
+/* ── Mobile / Tablet: off-canvas drawer ────────────────────────────────── */
+@media (max-width: 1024px) {
+  .sidebar {
+    /* Always full 260px width on mobile (ignore collapsed rail state) */
+    width: 260px !important;
+    /* Hidden off-screen by default */
+    transform: translateX(-100%);
+    z-index: 1100;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.3);
+
+    /* Show labels/name even if the desktop collapsed class is set */
+    .sidebar__name  { opacity: 1 !important; width: auto !important; }
+    .sidebar__label { opacity: 1 !important; width: auto !important; }
+
+    /* Hide the desktop collapse toggle on mobile (drawer uses hamburger) */
+    .sidebar__collapse { display: none; }
+  }
+
+  /* When the shell has the mobile-open class, slide the drawer in */
+  :host-context(.shell--mobile-open) .sidebar {
+    transform: translateX(0);
   }
 }
 
