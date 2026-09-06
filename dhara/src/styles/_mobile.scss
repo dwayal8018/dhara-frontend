@@ -1,0 +1,145 @@
+/* ============================================================================
+   DHARA — Shared Mobile / Tablet Responsive Utilities
+   ----------------------------------------------------------------------------
+   Breakpoints (hardcoded — CSS @media cannot use var()):
+     Tablet  : <= 1024px
+     Mobile  : <= 640px
+     Small   : <= 400px
+
+   TABLE-TO-CARD PATTERN
+   ---------------------
+   To make any <table> convert to stacked cards on mobile, add the class
+   "responsive-table" to the <table>, and on each <td> add a
+   data-label="Column Name" attribute. On mobile the table rows become
+   cards and each cell shows its label. Example:
+
+     <table class="responsive-table">
+       <tr><td data-label="Product">PVC Pipe</td> ... </tr>
+     </table>
+============================================================================ */
+
+/* ── Touch target sizing (mobile) — bigger tap areas for workers ────────── */
+@media (max-width: 640px) {
+  button,
+  .btn,
+  a.btn,
+  select,
+  input[type="checkbox"],
+  input[type="radio"] {
+    min-height: 44px;
+  }
+
+  input[type="text"],
+  input[type="number"],
+  input[type="tel"],
+  input[type="email"],
+  input[type="search"],
+  input[type="date"],
+  textarea,
+  select {
+    font-size: 16px; /* prevents iOS auto-zoom on focus */
+  }
+
+  /* Icon-only buttons can stay compact */
+  .icon-btn {
+    min-width: 40px;
+    min-height: 40px;
+  }
+}
+
+/* ── Table → Card conversion on mobile ──────────────────────────────────── */
+@media (max-width: 640px) {
+  table.responsive-table {
+    border: none !important;
+  }
+
+  table.responsive-table thead {
+    display: none; /* hide header row — labels come from data-label */
+  }
+
+  table.responsive-table,
+  table.responsive-table tbody,
+  table.responsive-table tr,
+  table.responsive-table td {
+    display: block;
+    width: 100%;
+  }
+
+  table.responsive-table tr {
+    background: var(--dh-surface, #fff);
+    border: 1px solid var(--dh-border, #e2e8f0);
+    border-radius: 12px;
+    padding: 6px 12px;
+    margin-bottom: 12px;
+    box-shadow: var(--dh-shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.06));
+  }
+
+  table.responsive-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0 !important;
+    border: none !important;
+    border-bottom: 1px solid var(--dh-border, #f1f5f9) !important;
+    text-align: right;
+    white-space: normal !important;
+    font-size: 14px;
+  }
+
+  table.responsive-table td:last-child {
+    border-bottom: none !important;
+  }
+
+  /* Left-side label from data-label */
+  table.responsive-table td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: var(--dh-text-muted, #64748b);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    text-align: left;
+    flex-shrink: 0;
+  }
+
+  /* Cells that hold action buttons should center them full-width */
+  table.responsive-table td.actions-cell,
+  table.responsive-table td[data-label="Actions"] {
+    justify-content: flex-end;
+  }
+
+  /* Hide the pseudo-label when the cell is explicitly marked no-label */
+  table.responsive-table td.no-label::before {
+    content: "";
+  }
+}
+
+/* ── Full-screen modals on mobile ───────────────────────────────────────── */
+@media (max-width: 640px) {
+  .modal,
+  .pay-modal,
+  .detail-modal {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    border-radius: 0 !important;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .modal-backdrop {
+    padding: 0 !important;
+    align-items: stretch !important;
+  }
+}
+
+/* ── Utility: hide on mobile / show only on mobile ──────────────────────── */
+.hide-mobile { }
+.show-mobile { display: none !important; }
+
+@media (max-width: 640px) {
+  .hide-mobile { display: none !important; }
+  .show-mobile { display: block !important; }
+}

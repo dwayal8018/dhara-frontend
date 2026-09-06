@@ -795,7 +795,7 @@
 
 .toast {
   position: fixed;
-  bottom: 28px;
+  top: 24px;
   left: 50%;
   transform: translateX(-50%);
   background: #1E293B;
@@ -805,14 +805,15 @@
   padding: 12px 24px;
   border-radius: 10px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-  z-index: 2000;
-  white-space: nowrap;
+  z-index: 10000;
+  max-width: 90vw;
+  text-align: center;
   animation: toast-in 0.2s ease;
   pointer-events: none;
 }
 
 @keyframes toast-in {
-  from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+  from { opacity: 0; transform: translateX(-50%) translateY(-10px); }
   to   { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
@@ -924,4 +925,38 @@
 
 .modal--small {
   max-width: 460px;
+}
+
+/* ─── Small phones (≤640px) ─────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .settings { padding: 14px; }
+
+  /* Tab nav scrolls horizontally so all tabs are reachable */
+  .settings-nav {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .nav-item {
+    flex: 0 0 auto;
+    min-width: 90px;
+    white-space: nowrap;
+  }
+
+  /* Single-column forms on phones */
+  .form-grid { grid-template-columns: 1fr; }
+  .form-group,
+  .form-group--lg,
+  .form-group--full { grid-column: span 1; }
+  .form-row { grid-template-columns: 1fr; }
+
+  /* Page header stacks */
+  .page-header { flex-direction: column; align-items: stretch; gap: 12px; }
+
+  /* User cards stack their info */
+  .user-card { flex-direction: column; align-items: flex-start; }
+
+  /* Save buttons full width for easy tapping */
+  .save-row { flex-direction: column; }
+  .save-row .btn { width: 100%; justify-content: center; }
 }

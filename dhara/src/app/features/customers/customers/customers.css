@@ -741,8 +741,24 @@ td.balance { color: var(--dh-text-primary); font-size: 14px; }
   .metrics-row { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 640px) {
-  .customers { padding: 16px; }
-  .stats-row  { grid-template-columns: 1fr 1fr; }
-  .metrics-row { grid-template-columns: 1fr 1fr; }
+  .customers { padding: 14px; }
+  .stats-row  { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .metrics-row { grid-template-columns: 1fr 1fr; gap: 10px; }
   .profile-card { flex-direction: column; }
+
+  /* Customer list taller so more are visible before scrolling to ledger */
+  .list-panel { height: 340px; }
+
+  /* Page header + action buttons stack full width */
+  .page-header { flex-direction: column; align-items: stretch; gap: 12px; }
+  .page-header__right { display: flex; flex-wrap: wrap; gap: 8px; }
+  .page-header__right .btn { flex: 1; justify-content: center; }
+
+  /* Ledger padding tightens */
+  .ledger-header { padding: 12px; }
+}
+
+@media (max-width: 400px) {
+  .stats-row  { grid-template-columns: 1fr; }
+  .metrics-row { grid-template-columns: 1fr; }
 }

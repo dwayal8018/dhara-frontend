@@ -70,7 +70,7 @@
         </button>
       </div>
       <div class="table-wrap">
-        <table>
+        <table class="responsive-table">
           <thead>
             <tr>
               <th>Product</th>
@@ -82,13 +82,13 @@
           <tbody>
             @for(item of lowStock(); track item.id) {
               <tr>
-                <td>{{ item.product }}</td>
-                <td><span class="tag">{{ item.category }}</span></td>
-                <td><span class="badge danger">{{ item.stock }}</span></td>
-                <td class="muted">{{ item.threshold }}</td>
+                <td data-label="Product">{{ item.product }}</td>
+                <td data-label="Category"><span class="tag">{{ item.category }}</span></td>
+                <td data-label="Stock"><span class="badge danger">{{ item.stock }}</span></td>
+                <td data-label="Min" class="muted">{{ item.threshold }}</td>
               </tr>
             } @empty {
-              <tr><td colspan="4" class="empty-cell">All products are well-stocked</td></tr>
+              <tr><td colspan="4" class="empty-cell no-label">All products are well-stocked</td></tr>
             }
           </tbody>
         </table>
@@ -153,9 +153,9 @@
         <tbody>
           @for(tx of transactions(); track tx.id) {
             <tr>
-              <td class="mono">{{ tx.invoice }}</td>
-              <td>{{ tx.customer }}</td>
-              <td>
+              <td data-label="Invoice" class="mono">{{ tx.invoice }}</td>
+              <td data-label="Customer">{{ tx.customer }}</td>
+              <td data-label="Type">
                 <span class="badge"
                   [class.info]="tx.type === 'Sale'"
                   [class.warning]="tx.type === 'Return'"
@@ -163,18 +163,18 @@
                   {{ tx.type }}
                 </span>
               </td>
-              <td class="amount">₹{{ tx.amount | number }}</td>
-              <td>
+              <td data-label="Amount" class="amount">₹{{ tx.amount | number }}</td>
+              <td data-label="Status">
                 <span class="badge"
                   [class.success]="tx.status === 'Paid'"
                   [class.warning]="tx.status === 'Pending'">
                   {{ tx.status }}
                 </span>
               </td>
-              <td class="muted">{{ tx.date }}</td>
+              <td data-label="Time" class="muted">{{ tx.date }}</td>
             </tr>
           } @empty {
-            <tr><td colspan="6" class="empty-cell">No transactions yet — make your first sale!</td></tr>
+            <tr><td colspan="6" class="empty-cell no-label">No transactions yet — make your first sale!</td></tr>
           }
         </tbody>
       </table>

@@ -970,13 +970,97 @@ tbody tr:hover { background: #f8fafc; }
 }
 @media (max-width: 860px) {
   .pos-layout { grid-template-columns: 1fr; }
-  .catalogue-panel { height: 400px; position: static; }
+  .catalogue-panel { height: 380px; position: static; }
   .history-stats { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* ── Mobile POS redesign (≤640px) ─────────────────────────────────────── */
 @media (max-width: 640px) {
-  .sales { padding: 16px; }
-  .cart-head, .cart-row { grid-template-columns: 1fr 90px 100px 64px 80px 28px; }
-  .history-stats { grid-template-columns: 1fr 1fr; }
+  .sales { padding: 14px; gap: 16px; }
+
+  .page-title { font-size: 20px; }
+
+  /* Catalogue taller so more products are visible */
+  .catalogue-panel { height: 320px; }
+
+  /* Hide the desktop cart header row — mobile uses stacked cards */
+  .cart-head { display: none; }
+
+  /* Cart row becomes a stacked card */
+  .cart-row {
+    display: block !important;
+    position: relative;
+    background: var(--dh-surface);
+    border: 1px solid var(--dh-border);
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 10px;
+  }
+
+  .cart-row__name {
+    padding-right: 36px; /* leave room for remove button */
+    margin-bottom: 10px;
+  }
+  .cart-row__product { font-size: 15px; font-weight: 600; display: block; }
+  .cart-row__sku { font-size: 12px; color: var(--dh-text-muted); }
+
+  /* Put qty / price / disc / total on a flexible row */
+  .cart-row .qty-stepper,
+  .cart-row .price-input,
+  .cart-row .disc-input {
+    display: inline-flex;
+    margin: 4px 8px 4px 0;
+    vertical-align: middle;
+  }
+
+  /* Label each mobile control */
+  .cart-row .qty-stepper::before,
+  .cart-row .price-input::before,
+  .cart-row .disc-input::before {
+    font-size: 11px;
+    color: var(--dh-text-muted);
+    align-self: center;
+    margin-right: 4px;
+    text-transform: uppercase;
+  }
+  .cart-row .qty-stepper::before  { content: "Qty"; }
+  .cart-row .price-input::before  { content: "Rate"; }
+  .cart-row .disc-input::before   { content: "Disc"; }
+
+  .cart-row__total {
+    display: block;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--dh-border);
+    font-size: 16px;
+    font-weight: 700;
+    text-align: right;
+  }
+  .cart-row__total::before {
+    content: "Total: ";
+    font-size: 12px;
+    color: var(--dh-text-muted);
+    font-weight: 500;
+  }
+
+  /* Remove button pinned to top-right of the card */
+  .cart-row .remove-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+  }
+
+  /* Bigger tap targets for qty stepper */
+  .qty-stepper button { min-width: 36px; min-height: 36px; }
+  .qty-stepper input  { min-height: 36px; width: 44px; }
+
+  .history-stats { grid-template-columns: 1fr; }
+
+  /* Page header stacks */
+  .page-header { flex-direction: column; align-items: stretch; }
+  .page-header__right { width: 100%; }
+  .tab-toggle { width: 100%; }
+  .tab-toggle button { flex: 1; justify-content: center; }
 }
 
 /* ─── Invoice Detail Modal ─────────────────────────────────────────────────── */

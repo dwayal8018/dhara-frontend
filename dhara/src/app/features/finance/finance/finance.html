@@ -196,7 +196,7 @@
 
     <!-- Monthly cash flow table -->
     <div class="table-wrap">
-      <table>
+      <table class="responsive-table">
         <thead>
           <tr>
             <th>Month</th>
@@ -214,21 +214,21 @@
         <tbody>
           @for(m of monthlyFlow; track m.month; let i = $index) {
             <tr [class.current-month]="m.shortMonth === 'Jul'">
-              <td class="month-cell">
+              <td data-label="Month" class="month-cell">
                 {{ m.month }}
                 @if(m.shortMonth === 'Jul') { <span class="current-tag">Current</span> }
               </td>
-              <td class="amount revenue">₹{{ m.revenue | number }}</td>
-              <td class="amount expense">₹{{ m.purchases | number }}</td>
-              <td class="amount muted">₹{{ m.expenses | number }}</td>
-              <td class="amount profit">₹{{ m.grossProfit | number }}</td>
-              <td class="center">
+              <td data-label="Revenue" class="amount revenue">₹{{ m.revenue | number }}</td>
+              <td data-label="Purchases" class="amount expense">₹{{ m.purchases | number }}</td>
+              <td data-label="Overheads" class="amount muted">₹{{ m.expenses | number }}</td>
+              <td data-label="Gross Profit" class="amount profit">₹{{ m.grossProfit | number }}</td>
+              <td data-label="Gross Margin" class="center">
                 <span class="margin-chip">
                   {{ (m.grossProfit / m.revenue * 100) | number:'1.0-0' }}%
                 </span>
               </td>
-              <td class="amount profit bold">₹{{ m.netProfit | number }}</td>
-              <td class="center">
+              <td data-label="Net Profit" class="amount profit bold">₹{{ m.netProfit | number }}</td>
+              <td data-label="Net Margin" class="center">
                 <span class="margin-chip"
                   [class.good]="marginPct(m) >= 25"
                   [class.ok]="marginPct(m) >= 18 && marginPct(m) < 25"
@@ -236,8 +236,8 @@
                   {{ marginPct(m) }}%
                 </span>
               </td>
-              <td class="amount muted">₹{{ m.openingCash | number }}</td>
-              <td class="amount cash">₹{{ m.closingCash | number }}</td>
+              <td data-label="Opening Cash" class="amount muted">₹{{ m.openingCash | number }}</td>
+              <td data-label="Closing Cash" class="amount cash">₹{{ m.closingCash | number }}</td>
             </tr>
           }
         </tbody>
@@ -287,7 +287,7 @@
 
     <!-- Transaction table -->
     <div class="table-wrap">
-      <table>
+      <table class="responsive-table">
         <thead>
           <tr>
             <th>Date</th>
@@ -302,15 +302,15 @@
         <tbody>
           @for(tx of filteredTx(); track tx.id) {
             <tr [class.income-row]="tx.type === 'Income'" [class.expense-row]="tx.type === 'Expense'">
-              <td class="date-cell muted">{{ tx.date }}</td>
-              <td>
+              <td data-label="Date" class="date-cell muted">{{ tx.date }}</td>
+              <td data-label="Type">
                 <span class="badge" [class]="txTypeClass(tx.type)">{{ tx.type }}</span>
               </td>
-              <td class="category-cell">{{ tx.category }}</td>
-              <td class="desc-cell">{{ tx.description }}</td>
-              <td class="muted small">{{ tx.mode }}</td>
-              <td class="mono small">{{ tx.ref || '—' }}</td>
-              <td class="amount" [class.income-amount]="tx.type === 'Income'" [class.expense-amount]="tx.type === 'Expense'">
+              <td data-label="Category" class="category-cell">{{ tx.category }}</td>
+              <td data-label="Description" class="desc-cell">{{ tx.description }}</td>
+              <td data-label="Mode" class="muted small">{{ tx.mode }}</td>
+              <td data-label="Reference" class="mono small">{{ tx.ref || '—' }}</td>
+              <td data-label="Amount" class="amount" [class.income-amount]="tx.type === 'Income'" [class.expense-amount]="tx.type === 'Expense'">
                 {{ tx.type === 'Income' ? '+' : '–' }} ₹{{ tx.amount | number }}
               </td>
             </tr>

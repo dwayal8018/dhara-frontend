@@ -113,7 +113,7 @@
             <!-- TABLE VIEW -->
             @if(viewMode() === 'table') {
             <div class="table-wrap">
-                <table>
+                <table class="responsive-table">
                     <thead>
                         <tr>
                             <th>SKU</th>
@@ -146,31 +146,31 @@
                     <tbody>
                         @for(p of products(); track p.id) {
                         <tr>
-                            <td class="mono">{{ p.sku }}</td>
-                            <td>
+                            <td data-label="SKU" class="mono">{{ p.sku }}</td>
+                            <td data-label="Product">
                                 <div class="prod-name">{{ p.name }}</div>
                                 <div class="prod-unit">{{ p.unit }}</div>
                             </td>
-                            <td><span class="badge" [class]="categoryClass(p.category)">{{ p.category }}</span></td>
-                            <td class="muted">{{ p.brand }}</td>
-                            <td>
+                            <td data-label="Category"><span class="badge" [class]="categoryClass(p.category)">{{ p.category }}</span></td>
+                            <td data-label="Brand" class="muted">{{ p.brand }}</td>
+                            <td data-label="Stock">
                                 <div class="stock-cell">
                                     <span class="stock-num" [class.low]="p.stock <= p.minStock">{{ p.stock }}</span>
                                     <span class="stock-min">/ {{ p.minStock }} min</span>
                                 </div>
                             </td>
-                            <td class="amount">₹{{ p.purchasePrice | number }}</td>
-                            <td class="amount primary">₹{{ p.sellingPrice | number }}</td>
-                            <td class="amount">₹{{ p.wholesalePrice | number }}</td>
-                            <td>
+                            <td data-label="Purchase" class="amount">₹{{ p.purchasePrice | number }}</td>
+                            <td data-label="Selling" class="amount primary">₹{{ p.sellingPrice | number }}</td>
+                            <td data-label="Wholesale" class="amount">₹{{ p.wholesalePrice | number }}</td>
+                            <td data-label="Margin">
                                 <span class="margin-badge" [class.good]="margin(p) >= 20" [class.low]="margin(p) < 15">
                                     {{ margin(p) }}%
                                 </span>
                             </td>
-                            <td class="muted">{{ p.gst }}%</td>
-                            <td class="muted">{{ p.warehouse }} · {{ p.rack }}</td>
-                            <td><span class="badge" [class]="statusClass(p.status)">{{ p.status }}</span></td>
-                            <td>
+                            <td data-label="GST" class="muted">{{ p.gst }}%</td>
+                            <td data-label="Location" class="muted">{{ p.warehouse }} · {{ p.rack }}</td>
+                            <td data-label="Status"><span class="badge" [class]="statusClass(p.status)">{{ p.status }}</span></td>
+                            <td data-label="Actions" class="actions-cell">
                                 <div class="row-actions">
                                     <button class="icon-btn" (click)="openEditModal(p)" title="Edit product">
                                         <span class="material-symbols-outlined">edit</span>
@@ -183,7 +183,7 @@
                         </tr>
                         }
                         @empty {
-                        <tr><td colspan="10" style="text-align:center;padding:32px;color:#94a3b8;font-style:italic">No products found. Add your first product to get started!</td></tr>
+                        <tr><td colspan="13" class="no-label" style="text-align:center;padding:32px;color:#94a3b8;font-style:italic">No products found. Add your first product to get started!</td></tr>
                         }
                     </tbody>
                 </table>

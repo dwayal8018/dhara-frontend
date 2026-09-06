@@ -14,6 +14,11 @@
   padding: 28px;
   background: var(--dh-background);
   min-height: 100%;
+
+  @media (max-width: 640px) {
+    padding: 14px;
+    gap: 16px;
+  }
 }
 
 /* ── Hero ─────────────────────────────────── */
@@ -39,6 +44,16 @@
     font-size: 14px;
     color: rgba(255,255,255,0.75);
     margin: 0;
+  }
+
+  @media (max-width: 640px) {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 20px;
+    border-radius: var(--dh-radius-lg);
+
+    h1 { font-size: 18px; }
+    p  { font-size: 13px; }
   }
 }
 
@@ -174,6 +189,10 @@
   padding: 24px;
   box-shadow: var(--dh-shadow-sm);
   border: 1px solid var(--dh-border);
+
+  @media (max-width: 640px) {
+    padding: 16px;
+  }
 }
 
 .panel__header {
@@ -261,6 +280,10 @@
   padding: 24px;
   box-shadow: var(--dh-shadow-sm);
   border: 1px solid var(--dh-border);
+
+  @media (max-width: 640px) {
+    padding: 16px;
+  }
 }
 
 .card__header {
@@ -538,6 +561,20 @@ tbody tr:hover { background: #f8fafc; }
   }
 
   &:active { transform: translateY(0); }
+
+  /* On mobile the sidebar is off-canvas — anchor FAB to the right,
+     above the assistant button (which is bottom-left). */
+  @media (max-width: 1024px) {
+    left: auto;
+    right: 20px;
+    bottom: 20px;
+  }
+
+  @media (max-width: 640px) {
+    /* Show icon only to save space */
+    padding: 16px;
+    .fab-new-sale__label { display: none; }
+  }
 }
 
 

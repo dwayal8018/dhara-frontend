@@ -208,21 +208,21 @@
         <tbody>
           @for(p of filteredProducts(); track p.rank) {
             <tr>
-              <td class="rank">{{ p.rank }}</td>
-              <td class="mono">{{ p.sku }}</td>
-              <td class="name-cell">{{ p.name }}</td>
-              <td class="muted">{{ p.category }}</td>
-              <td class="center bold">{{ p.unitsSold }}</td>
-              <td class="amount">₹{{ p.revenue | number }}</td>
-              <td class="amount profit">₹{{ p.profit | number }}</td>
-              <td class="center">
+              <td data-label="#" class="rank">{{ p.rank }}</td>
+              <td data-label="SKU" class="mono">{{ p.sku }}</td>
+              <td data-label="Product" class="name-cell">{{ p.name }}</td>
+              <td data-label="Category" class="muted">{{ p.category }}</td>
+              <td data-label="Units Sold" class="center bold">{{ p.unitsSold }}</td>
+              <td data-label="Revenue" class="amount">₹{{ p.revenue | number }}</td>
+              <td data-label="Profit" class="amount profit">₹{{ p.profit | number }}</td>
+              <td data-label="Margin" class="center">
                 <span class="margin-chip"
                   [class.good]="p.margin >= 25"
                   [class.ok]="p.margin >= 18 && p.margin < 25"
                   [class.low]="p.margin < 18">{{ p.margin }}%</span>
               </td>
-              <td class="center" [class.low-stock]="p.stock <= 5">{{ p.stock }}</td>
-              <td class="center">
+              <td data-label="Stock" class="center" [class.low-stock]="p.stock <= 5">{{ p.stock }}</td>
+              <td data-label="Trend" class="center">
                 <span class="trend-icon" [class]="trendClass(p.trend)">
                   <span class="material-symbols-outlined">{{ trendIcon(p.trend) }}</span>
                 </span>
@@ -263,7 +263,7 @@
     </div>
 
     <div class="table-wrap">
-      <table>
+      <table class="responsive-table">
         <thead>
           <tr>
             <th>#</th>
@@ -279,8 +279,8 @@
         <tbody>
           @for(c of filteredCustomers(); track c.rank) {
             <tr>
-              <td class="rank">{{ c.rank }}</td>
-              <td>
+              <td data-label="#" class="rank">{{ c.rank }}</td>
+              <td data-label="Customer">
                 <div class="cust-cell">
                   <div class="cust-avatar"
                     [style.background]="avatarColor(c.avatar) + '20'"
@@ -293,14 +293,14 @@
                   </div>
                 </div>
               </td>
-              <td class="muted">{{ c.area }}</td>
-              <td class="amount bold">₹{{ c.totalPurchases | number }}</td>
-              <td class="center">{{ c.invoices }}</td>
-              <td class="amount">₹{{ c.avgBill | number }}</td>
-              <td class="amount" [class.outstanding]="c.outstanding > 0">
+              <td data-label="Area" class="muted">{{ c.area }}</td>
+              <td data-label="Total Purchases" class="amount bold">₹{{ c.totalPurchases | number }}</td>
+              <td data-label="Invoices" class="center">{{ c.invoices }}</td>
+              <td data-label="Avg Bill" class="amount">₹{{ c.avgBill | number }}</td>
+              <td data-label="Outstanding" class="amount" [class.outstanding]="c.outstanding > 0">
                 {{ c.outstanding > 0 ? ('₹' + (c.outstanding | number)) : '—' }}
               </td>
-              <td class="muted small">{{ c.lastVisit }}</td>
+              <td data-label="Last Visit" class="muted small">{{ c.lastVisit }}</td>
             </tr>
           }
         </tbody>
@@ -340,7 +340,7 @@
     </div>
 
     <div class="table-wrap">
-      <table>
+      <table class="responsive-table">
         <thead>
           <tr>
             <th>Status</th>
@@ -359,15 +359,15 @@
         <tbody>
           @for(a of filteredAlerts(); track a.sku) {
             <tr [class.critical-row]="a.status === 'Critical'" [class.low-row]="a.status === 'Low'">
-              <td>
+              <td data-label="Status">
                 <span class="badge" [class]="alertClass(a.status)">{{ a.status }}</span>
               </td>
-              <td class="mono">{{ a.sku }}</td>
-              <td class="name-cell">{{ a.name }}</td>
-              <td class="muted">{{ a.category }}</td>
-              <td class="center bold" [class.critical-val]="a.status === 'Critical'">{{ a.stock }}</td>
-              <td class="center muted">{{ a.minStock }}</td>
-              <td>
+              <td data-label="SKU" class="mono">{{ a.sku }}</td>
+              <td data-label="Product" class="name-cell">{{ a.name }}</td>
+              <td data-label="Category" class="muted">{{ a.category }}</td>
+              <td data-label="Stock" class="center bold" [class.critical-val]="a.status === 'Critical'">{{ a.stock }}</td>
+              <td data-label="Min" class="center muted">{{ a.minStock }}</td>
+              <td data-label="Stock Level">
                 <div class="stock-bar-wrap">
                   <div class="stock-bar"
                     [style.width.%]="stockPct(a.stock, a.minStock)"
@@ -377,12 +377,12 @@
                 </div>
                 <div class="stock-bar-label">{{ stockPct(a.stock, a.minStock) }}% of min</div>
               </td>
-              <td class="center" [class.days-critical]="a.daysLeft <= 5">
+              <td data-label="Days Left" class="center" [class.days-critical]="a.daysLeft <= 5">
                 {{ a.daysLeft }}d
               </td>
-              <td class="center">{{ a.reorderQty }}</td>
-              <td class="muted">₹{{ a.lastPurchaseRate | number }}</td>
-              <td class="amount bold">₹{{ a.reorderValue | number }}</td>
+              <td data-label="Reorder Qty" class="center">{{ a.reorderQty }}</td>
+              <td data-label="Last Rate" class="muted">₹{{ a.lastPurchaseRate | number }}</td>
+              <td data-label="Reorder Value" class="amount bold">₹{{ a.reorderValue | number }}</td>
             </tr>
           }
         </tbody>

@@ -203,7 +203,7 @@
 
         @if(ledger().length > 0) {
           <div class="table-wrap">
-            <table>
+            <table class="responsive-table">
               <thead>
                 <tr>
                   <th>Date</th>
@@ -219,32 +219,32 @@
               <tbody>
                 @for(tx of ledger(); track tx.id) {
                   <tr [class.payment-row]="tx.type === 'Payment'">
-                    <td class="date-cell">
+                    <td data-label="Date" class="date-cell">
                       <div>{{ tx.date }}</div>
                       <div class="time">{{ tx.time }}</div>
                     </td>
-                    <td>
+                    <td data-label="Type">
                       <span class="badge" [class]="txTypeClass(tx.type)">{{ tx.type }}</span>
                     </td>
-                    <td class="desc-cell">
+                    <td data-label="Description" class="desc-cell">
                       {{ tx.description }}
                       @if(tx.notes) { <div class="tx-notes">{{ tx.notes }}</div> }
                     </td>
-                    <td class="mono">
+                    <td data-label="PO / Ref" class="mono">
                       <div>{{ tx.poNumber ?? '—' }}</div>
                       @if(tx.invoiceRef) { <div class="ref">{{ tx.invoiceRef }}</div> }
                     </td>
-                    <td class="amount debit">
+                    <td data-label="Debit" class="amount debit">
                       {{ tx.debit > 0 ? ('₹' + (tx.debit | number)) : '—' }}
                     </td>
-                    <td class="amount credit">
+                    <td data-label="Credit" class="amount credit">
                       {{ tx.credit > 0 ? ('₹' + (tx.credit | number)) : '—' }}
                     </td>
-                    <td class="amount balance" [class.negative]="tx.balance < 0">
+                    <td data-label="Balance" class="amount balance" [class.negative]="tx.balance < 0">
                       ₹{{ (tx.balance < 0 ? -tx.balance : tx.balance) | number }}
                       @if(tx.balance < 0) { <span class="advance-tag">Adv</span> }
                     </td>
-                    <td class="muted small">
+                    <td data-label="Mode" class="muted small">
                       @if(tx.paymentMode) {
                         <span class="mode-chip">{{ tx.paymentMode }}</span>
                       } @else { — }

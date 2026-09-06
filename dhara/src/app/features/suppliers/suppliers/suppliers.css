@@ -356,7 +356,22 @@ td.negative { color: #16a34a; }
   .metrics-row { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 640px) {
-  .suppliers  { padding: 16px; }
-  .metrics-row { grid-template-columns: 1fr 1fr; }
+  .suppliers  { padding: 14px; }
+  .metrics-row { grid-template-columns: 1fr 1fr; gap: 10px; }
   .profile-card { flex-direction: column; }
+
+  .stats-row { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .list-panel { height: 340px; }
+
+  /* Header + buttons stack */
+  .page-header { flex-direction: column; align-items: stretch; gap: 12px; }
+  .page-header__right { display: flex; flex-wrap: wrap; gap: 8px; }
+  .page-header__right .btn { flex: 1; justify-content: center; }
+
+  .ledger-header { padding: 12px; }
+}
+
+@media (max-width: 400px) {
+  .metrics-row { grid-template-columns: 1fr; }
+  .stats-row { grid-template-columns: 1fr; }
 }

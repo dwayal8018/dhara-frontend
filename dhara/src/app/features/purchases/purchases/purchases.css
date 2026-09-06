@@ -600,7 +600,95 @@ input[type="date"] { cursor: pointer; }
   .detail-meta { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 640px) {
-  .purchases { padding: 16px; }
-  .stats-row { grid-template-columns: 1fr 1fr; }
-  .cart-head, .cart-row { grid-template-columns: 1fr 90px 60px 100px 100px 50px 90px 28px; }
+  .purchases { padding: 14px; }
+  .stats-row { grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  /* Catalogue taller on mobile */
+  .catalogue-panel { height: 320px; }
+
+  /* Page header + tabs stack */
+  .page-header { flex-direction: column; align-items: stretch; gap: 12px; }
+  .tab-toggle { width: 100%; }
+  .tab-toggle button { flex: 1; justify-content: center; }
+
+  /* Hide desktop cart header — mobile uses stacked cards */
+  .cart-head { display: none; }
+
+  /* Cart row → stacked card */
+  .cart-row {
+    display: block !important;
+    position: relative;
+    background: var(--dh-surface);
+    border: 1px solid var(--dh-border);
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 10px;
+  }
+  .cart-row__name {
+    font-size: 15px;
+    font-weight: 600;
+    padding-right: 36px;
+    margin-bottom: 4px;
+  }
+  .cart-row .mono.small,
+  .cart-row .muted.small {
+    display: inline-block;
+    margin-right: 8px;
+    font-size: 12px;
+    color: var(--dh-text-muted);
+  }
+
+  .cart-row .qty-stepper,
+  .cart-row .rate-input {
+    display: inline-flex;
+    margin: 8px 8px 0 0;
+    vertical-align: middle;
+  }
+  .cart-row .qty-stepper::before,
+  .cart-row .rate-input::before {
+    font-size: 11px;
+    color: var(--dh-text-muted);
+    align-self: center;
+    margin-right: 4px;
+    text-transform: uppercase;
+  }
+  .cart-row .qty-stepper::before { content: "Qty"; }
+  .cart-row .rate-input::before  { content: "Rate"; }
+
+  .cart-row .gst-col {
+    display: inline-block;
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--dh-text-muted);
+  }
+  .cart-row .gst-col::before { content: "GST "; }
+
+  .cart-row .line-total {
+    display: block;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--dh-border);
+    font-size: 16px;
+    font-weight: 700;
+    text-align: right;
+  }
+  .cart-row .line-total::before {
+    content: "Total: ";
+    font-size: 12px;
+    color: var(--dh-text-muted);
+    font-weight: 500;
+  }
+
+  .cart-row .remove-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+  }
+
+  .qty-stepper button { min-width: 36px; min-height: 36px; }
+  .qty-stepper input  { min-height: 36px; width: 44px; }
+}
+
+@media (max-width: 400px) {
+  .stats-row { grid-template-columns: 1fr; }
 }

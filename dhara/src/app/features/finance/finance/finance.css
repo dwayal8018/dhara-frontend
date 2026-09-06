@@ -280,14 +280,15 @@ td.expense-amount { color: #dc2626; font-size: 14px; font-weight: 700; }
 
 /* TOAST */
 .toast {
-  position: fixed; bottom: 28px; right: 28px; background: #0f172a; color: #fff;
-  padding: 12px 20px; border-radius: var(--dh-radius-md); font-size: 14px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.25); z-index: 1000;
-  animation: slideUp 0.2s ease; max-width: 400px;
+  position: fixed; top: 24px; left: 50%; transform: translateX(-50%);
+  background: #0f172a; color: #fff;
+  padding: 12px 24px; border-radius: var(--dh-radius-md); font-size: 14px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.25); z-index: 10000;
+  animation: slideUp 0.2s ease; max-width: 90vw; text-align: center;
 }
 @keyframes slideUp {
-  from { transform: translateY(10px); opacity: 0; }
-  to   { transform: translateY(0);    opacity: 1; }
+  from { transform: translateX(-50%) translateY(-10px); opacity: 0; }
+  to   { transform: translateX(-50%) translateY(0);    opacity: 1; }
 }
 
 /* RESPONSIVE */
@@ -298,9 +299,23 @@ td.expense-amount { color: #dc2626; font-size: 14px; font-weight: 700; }
   .ytd-pills  { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 640px) {
-  .finance    { padding: 16px; }
-  .stats-grid { grid-template-columns: 1fr 1fr; }
+  .finance    { padding: 14px; }
+  .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
   .ytd-pills  { grid-template-columns: 1fr 1fr; }
   .bar-chart  { height: 140px; }
   .bar-stack  { height: 110px; }
+
+  /* Tabs scroll horizontally if they overflow */
+  .finance-tabs, .tab-toggle {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Page header stacks */
+  .page-header { flex-direction: column; align-items: stretch; gap: 12px; }
+}
+
+@media (max-width: 400px) {
+  .stats-grid { grid-template-columns: 1fr; }
+  .ytd-pills  { grid-template-columns: 1fr; }
 }

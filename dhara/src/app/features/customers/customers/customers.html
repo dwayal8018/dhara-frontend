@@ -192,7 +192,7 @@
         </div>
 
         <div class="table-wrap">
-          <table>
+          <table class="responsive-table">
             <thead>
               <tr>
                 <th>Date</th>
@@ -208,30 +208,30 @@
             <tbody>
               @for(entry of ledger(); track entry.id) {
                 <tr [class.payment-row]="entry.type === 'Payment'">
-                  <td class="date-cell">
+                  <td data-label="Date" class="date-cell">
                     <div>{{ entry.date }}</div>
                     <div class="time">{{ entry.time }}</div>
                   </td>
-                  <td>
+                  <td data-label="Type">
                     <span class="badge" [class]="entryTypeClass(entry.type)">
                       {{ entry.type }}
                     </span>
                   </td>
-                  <td class="desc-cell">
+                  <td data-label="Description" class="desc-cell">
                     {{ entry.description }}
                     @if(entry.notes) {
                       <div class="entry-notes">{{ entry.notes }}</div>
                     }
                   </td>
-                  <td class="mono">{{ entry.invoice ?? '—' }}</td>
-                  <td class="amount debit">
+                  <td data-label="Invoice" class="mono">{{ entry.invoice ?? '—' }}</td>
+                  <td data-label="Debit" class="amount debit">
                     {{ entry.debit > 0 ? ('₹' + (entry.debit | number)) : '—' }}
                   </td>
-                  <td class="amount credit">
+                  <td data-label="Credit" class="amount credit">
                     {{ entry.credit > 0 ? ('₹' + (entry.credit | number)) : '—' }}
                   </td>
-                  <td class="amount balance">₹{{ entry.balance | number }}</td>
-                  <td class="muted small">
+                  <td data-label="Balance" class="amount balance">₹{{ entry.balance | number }}</td>
+                  <td data-label="Mode" class="muted small">
                     @if(entry.paymentMode) {
                       <span class="mode-chip">{{ entry.paymentMode }}</span>
                     } @else {

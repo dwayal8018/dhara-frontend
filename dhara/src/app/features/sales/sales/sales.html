@@ -298,7 +298,7 @@
 
     <!-- Table -->
     <div class="table-wrap">
-      <table>
+      <table class="responsive-table">
         <thead>
           <tr>
             <th>Invoice</th>
@@ -319,31 +319,31 @@
         <tbody>
           @for(inv of filteredHistory(); track inv.id) {
             <tr>
-              <td class="mono">{{ inv.invoice }}</td>
-              <td class="name-cell">{{ inv.customer }}</td>
-              <td class="muted">{{ inv.phone }}</td>
-              <td class="center">{{ inv.items }}</td>
-              <td class="amount">₹{{ inv.subtotal | number }}</td>
-              <td class="muted">₹{{ inv.gstAmt | number }}</td>
-              <td class="muted">{{ inv.discount }}%</td>
-              <td class="amount bold">₹{{ inv.total | number }}</td>
-              <td class="amount" [class.partial]="inv.paid < inv.total">
+              <td data-label="Invoice" class="mono">{{ inv.invoice }}</td>
+              <td data-label="Customer" class="name-cell">{{ inv.customer }}</td>
+              <td data-label="Phone" class="muted">{{ inv.phone }}</td>
+              <td data-label="Items" class="center">{{ inv.items }}</td>
+              <td data-label="Subtotal" class="amount">₹{{ inv.subtotal | number }}</td>
+              <td data-label="GST" class="muted">₹{{ inv.gstAmt | number }}</td>
+              <td data-label="Discount" class="muted">{{ inv.discount }}%</td>
+              <td data-label="Total" class="amount bold">₹{{ inv.total | number }}</td>
+              <td data-label="Paid" class="amount" [class.partial]="inv.paid < inv.total">
                 ₹{{ inv.paid | number }}
               </td>
-              <td>
+              <td data-label="Mode">
                 <span class="mode-tag">
                   <span class="material-symbols-outlined">{{ modeIcon(inv.paymentMode) }}</span>
                   {{ inv.paymentMode }}
                 </span>
               </td>
-              <td>
+              <td data-label="Status">
                 <span class="badge" [class]="statusClass(inv.status)">{{ inv.status }}</span>
               </td>
-              <td class="muted small">
+              <td data-label="Date" class="muted small">
                 <div>{{ inv.date }}</div>
                 <div>{{ inv.time }}</div>
               </td>
-              <td>
+              <td data-label="Actions" class="actions-cell">
                 <div class="row-actions">
                   <button class="icon-btn" title="Print invoice" (click)="printSavedInvoice(inv)">
                     <span class="material-symbols-outlined">print</span>

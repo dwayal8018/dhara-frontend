@@ -75,7 +75,7 @@
 
     <!-- Orders Table -->
     <div class="table-wrap">
-      <table>
+      <table class="responsive-table">
         <thead>
           <tr>
             <th>PO Number</th>
@@ -97,8 +97,8 @@
         <tbody>
           @for(o of filteredOrders(); track o.id) {
             <tr>
-              <td class="mono">{{ o.poNumber }}</td>
-              <td>
+              <td data-label="PO Number" class="mono">{{ o.poNumber }}</td>
+              <td data-label="Supplier">
                 <div class="supplier-cell">
                   <div class="sup-avatar"
                     [style.background]="avatarColor(suppliers()[o.supplierId - 1]?.avatar ?? 'blue') + '20'"
@@ -111,20 +111,20 @@
                   </div>
                 </div>
               </td>
-              <td class="muted">{{ o.date }}</td>
-              <td class="muted">{{ o.dueDate }}</td>
-              <td class="center">{{ o.items.length }}</td>
-              <td class="amount">₹{{ o.subtotal | number }}</td>
-              <td class="muted">₹{{ o.gstAmount | number }}</td>
-              <td class="amount bold">₹{{ o.grandTotal | number }}</td>
-              <td class="amount paid">₹{{ o.paid | number }}</td>
-              <td class="amount" [class.due]="due(o) > 0">
+              <td data-label="Date" class="muted">{{ o.date }}</td>
+              <td data-label="Due Date" class="muted">{{ o.dueDate }}</td>
+              <td data-label="Items" class="center">{{ o.items.length }}</td>
+              <td data-label="Subtotal" class="amount">₹{{ o.subtotal | number }}</td>
+              <td data-label="GST" class="muted">₹{{ o.gstAmount | number }}</td>
+              <td data-label="Grand Total" class="amount bold">₹{{ o.grandTotal | number }}</td>
+              <td data-label="Paid" class="amount paid">₹{{ o.paid | number }}</td>
+              <td data-label="Due" class="amount" [class.due]="due(o) > 0">
                 {{ due(o) > 0 ? ('₹' + (due(o) | number)) : '—' }}
               </td>
-              <td class="muted small">{{ o.paymentMode }}</td>
-              <td><span class="badge" [class]="statusClass(o.status)">{{ o.status }}</span></td>
-              <td><span class="badge" [class]="payStatusClass(o.paymentStatus)">{{ o.paymentStatus }}</span></td>
-              <td>
+              <td data-label="Mode" class="muted small">{{ o.paymentMode }}</td>
+              <td data-label="Status"><span class="badge" [class]="statusClass(o.status)">{{ o.status }}</span></td>
+              <td data-label="Payment"><span class="badge" [class]="payStatusClass(o.paymentStatus)">{{ o.paymentStatus }}</span></td>
+              <td data-label="Actions" class="actions-cell">
                 <div class="row-actions">
                   <button class="icon-btn" title="View details" (click)="openDetail(o)">
                     <span class="material-symbols-outlined">open_in_new</span>
@@ -427,7 +427,7 @@
 
         <!-- Items table -->
         <div class="detail-table-wrap">
-          <table>
+          <table class="responsive-table">
             <thead>
               <tr>
                 <th>#</th>
@@ -444,15 +444,15 @@
             <tbody>
               @for(item of o.items; track item.productId; let i = $index) {
                 <tr>
-                  <td class="muted">{{ i + 1 }}</td>
-                  <td class="mono">{{ item.sku }}</td>
-                  <td class="item-name">{{ item.name }}</td>
-                  <td class="muted">{{ item.unit }}</td>
-                  <td class="center">{{ item.qty }}</td>
-                  <td class="amount">₹{{ item.rate | number }}</td>
-                  <td class="center muted">{{ item.gst }}%</td>
-                  <td class="muted">₹{{ (item.total * item.gst / 100) | number:'1.0-0' }}</td>
-                  <td class="amount bold">₹{{ (item.total * (1 + item.gst / 100)) | number:'1.0-0' }}</td>
+                  <td data-label="#" class="muted">{{ i + 1 }}</td>
+                  <td data-label="SKU" class="mono">{{ item.sku }}</td>
+                  <td data-label="Product" class="item-name">{{ item.name }}</td>
+                  <td data-label="Unit" class="muted">{{ item.unit }}</td>
+                  <td data-label="Qty" class="center">{{ item.qty }}</td>
+                  <td data-label="Rate" class="amount">₹{{ item.rate | number }}</td>
+                  <td data-label="GST %" class="center muted">{{ item.gst }}%</td>
+                  <td data-label="GST Amt" class="muted">₹{{ (item.total * item.gst / 100) | number:'1.0-0' }}</td>
+                  <td data-label="Total" class="amount bold">₹{{ (item.total * (1 + item.gst / 100)) | number:'1.0-0' }}</td>
                 </tr>
               }
             </tbody>
