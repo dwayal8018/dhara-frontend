@@ -25,6 +25,18 @@ export class ProductService {
   // ── Persist on every change ───────────────────────────────────────────────
   constructor() {
     effect(() => save(SK_PRODUCTS, this.products()));
+
+    // ── Migration: ensure older stored products have a subCategory field ──
+    const needs = this.products().some(p => !(p as any).subCategory);
+    if (needs) {
+      this.products.update(list =>
+        list.map(p => {
+          const any = p as any;
+          if (any.subCategory) return p;
+          return { ...any, subCategory: any.category?.toLowerCase() ?? '' } as Product;
+        })
+      );
+    }
   }
 
   // ── Derived computeds ─────────────────────────────────────────────────────

@@ -1,242 +1,309 @@
 <div class="inventory">
 
-    <!-- PAGE HEADER -->
-    <div class="page-header">
-        <div class="page-header__left">
-            <h1 class="page-title">Inventory</h1>
-            <p class="page-subtitle">Manage your products, stock levels and pricing</p>
-        </div>
-        <div class="page-header__right">
-            <button class="btn btn--outline" (click)="exportInventory()">
-                <span class="material-symbols-outlined">download</span> <span class="btn-label">Export</span>
-            </button>
-            <button class="btn btn--outline" (click)="showToast('Import feature coming soon!')">
-                <span class="material-symbols-outlined">upload</span> <span class="btn-label">Import</span>
-            </button>
-            <button class="btn btn--primary" (click)="openAddModal()">
-                <span class="material-symbols-outlined">add</span> <span class="btn-label">Add Product</span>
-            </button>
-        </div>
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <div class="page-header__left">
+      <h1 class="page-title">Inventory</h1>
+      <p class="page-subtitle">Browse categories, sub-categories and products</p>
     </div>
+    <div class="page-header__right">
+      <button class="btn btn--outline" (click)="exportInventory()">
+        <span class="material-symbols-outlined">download</span>
+        <span class="btn-label">Export</span>
+      </button>
+      <button class="btn btn--primary" (click)="openAddModal()">
+        <span class="material-symbols-outlined">add</span>
+        <span class="btn-label">Add Product</span>
+      </button>
+    </div>
+  </div>
 
-    <!-- KPI STATS -->
-    <div class="inv-stats">
-        @for(s of stats(); track s.label) {
-        <div class="inv-stat">
-            <div class="inv-stat__icon" [style.background]="s.color + '20'">
-                <span class="material-symbols-outlined" [style.color]="s.color">{{ s.icon }}</span>
-            </div>
-            <div>
-                <div class="inv-stat__value">{{ s.value }}</div>
-                <div class="inv-stat__label">{{ s.label }}</div>
-            </div>
-        </div>
+  <!-- KPI STATS -->
+  <div class="inv-stats">
+    @for(s of stats(); track s.label) {
+    <div class="inv-stat">
+      <div class="inv-stat__icon" [style.background]="s.color + '20'">
+        <span class="material-symbols-outlined" [style.color]="s.color">{{ s.icon }}</span>
+      </div>
+      <div>
+        <div class="inv-stat__value">{{ s.value }}</div>
+        <div class="inv-stat__label">{{ s.label }}</div>
+      </div>
+    </div>
+    }
+  </div>
+
+  <!-- MAIN BODY -->
+  <div class="inv-body">
+
+    <!-- CATEGORY SIDEBAR -->
+    <aside class="cat-panel">
+      <div class="cat-panel__title">Categories</div>
+
+      <button class="cat-item" [class.cat-item--active]="selectedCategory() === 'all'"
+        (click)="setCategory('all')">
+        <span class="material-symbols-outlined">apps</span>
+        <span>All Products</span>
+        <span class="cat-count">{{ dynamicCategories()[0].count }}</span>
+      </button>
+
+      @for(cat of dynamicCategories().slice(1); track cat.id) {
+      <button class="cat-item" [class.cat-item--active]="selectedCategory() === cat.id"
+        (click)="setCategory(cat.id)">
+        <span class="material-symbols-outlined">{{ cat.icon }}</span>
+        <span>{{ cat.label }}</span>
+        <span class="cat-count">{{ cat.count }}</span>
+      </button>
+      }
+    </aside>
+
+    <!-- PRODUCT PANEL -->
+    <div class="prod-panel">
+
+      <!-- BREADCRUMB -->
+      <div class="breadcrumb-nav">
+        <button class="bc-item" (click)="goToAll()">
+          <span class="material-symbols-outlined">apps</span> All
+        </button>
+        @if(selectedCategory() !== 'all') {
+          <span class="bc-sep">›</span>
+          <button class="bc-item" [class.bc-active]="navLevel() === 'subcategories'"
+            (click)="navLevel() === 'products' && selectedSubCategory() ? goBackToSubCategories() : null">
+            {{ selectedCategoryLabel() }}
+          </button>
         }
-    </div>
+        @if(selectedSubCategory()) {
+          <span class="bc-sep">›</span>
+          <span class="bc-item bc-active">{{ selectedSubCategoryObj()?.label }}</span>
+        }
+      </div>
 
-    <!-- MAIN BODY -->
-    <div class="inv-body">
+      <!-- ══ SUB-CATEGORY CARDS (category selected, no sub selected yet) ══ -->
+      @if(navLevel() === 'subcategories') {
 
-        <!-- CATEGORY SIDEBAR -->
-        <aside class="cat-panel">
-            <div class="cat-panel__title">Categories</div>
-            <button class="cat-item" [class.cat-item--active]="selectedCategory() === 'all'"
-                (click)="setCategory('all')">
-                <span class="material-symbols-outlined">apps</span>
-                <span>All Products</span>
-                <span class="cat-count">{{ dynamicCategories()[0].count }}</span>
-            </button>
-            @for(cat of dynamicCategories().slice(1); track cat.id) {
-            <button class="cat-item" [class.cat-item--active]="selectedCategory() === cat.id"
-                (click)="setCategory(cat.id)">
-                <span class="material-symbols-outlined">{{ cat.icon }}</span>
-                <span>{{ cat.label }}</span>
-                <span class="cat-count">{{ cat.count }}</span>
-            </button>
-            }
-        </aside>
+        <div class="sub-grid-header">
+          <h2 class="sub-grid-title">
+            <span class="material-symbols-outlined">{{ dynamicCategories().find(c => c.id === selectedCategory())?.icon }}</span>
+            {{ selectedCategoryLabel() }}
+          </h2>
+          <p class="sub-grid-subtitle">Select a sub-category to browse products</p>
+        </div>
 
-        <!-- PRODUCT PANEL -->
-        <div class="prod-panel">
-
-            <!-- TOOLBAR -->
-            <div class="toolbar">
-                <div class="toolbar__search">
-                    <span class="material-symbols-outlined">search</span>
-                    <input type="text" placeholder="Search by name, SKU, barcode..." [value]="searchQuery()"
-                        (input)="searchQuery.set($any($event.target).value)">
-                </div>
-                <div class="toolbar__filters">
-                    <select (change)="selectedStatus.set($any($event.target).value)">
-                        <option value="all">All Status</option>
-                        <option value="In Stock">In Stock</option>
-                        <option value="Low Stock">Low Stock</option>
-                        <option value="Out of Stock">Out of Stock</option>
-                    </select>
-                    <div class="view-toggle">
-                        <button [class.active]="viewMode() === 'table'" (click)="setView('table')">
-                            <span class="material-symbols-outlined">table_rows</span>
-                        </button>
-                        <button [class.active]="viewMode() === 'grid'" (click)="setView('grid')">
-                            <span class="material-symbols-outlined">grid_view</span>
-                        </button>
-                    </div>
-                </div>
+        <div class="sub-cat-grid">
+          @for(sub of currentSubCategories(); track sub.id) {
+          <button class="sub-cat-card" (click)="selectSubCategory(sub.id)">
+            <div class="sub-cat-card__img-wrap">
+              <img [src]="sub.image" [alt]="sub.label"
+                class="sub-cat-card__img"
+                (error)="onImgError($event)">
+              <div class="sub-cat-card__icon-fallback">
+                <span class="material-symbols-outlined">{{ sub.icon }}</span>
+              </div>
             </div>
-
-            <!-- SORT BAR -->
-            <div class="sort-bar">
-              <span class="sort-bar__label">
-                Sort within
-                <strong>{{ selectedCategory() === 'all' ? 'each category' : selectedCategory() }}</strong> by:
-              </span>
-              @for(opt of sortOptions; track opt.key) {
-                <button class="sort-pill"
-                  [class.active]="isSorted(opt.key)"
-                  (click)="setSort(opt.key)">
-                  {{ opt.label }}
-                  @if(isSorted(opt.key)) {
-                    <span class="material-symbols-outlined sort-arrow">{{ sortIcon(opt.key) }}</span>
-                  }
-                </button>
+            <div class="sub-cat-card__body">
+              <div class="sub-cat-card__name">{{ sub.label }}</div>
+              @if(sub.description) {
+                <div class="sub-cat-card__desc">{{ sub.description }}</div>
               }
             </div>
-
-            <!-- RESULTS COUNT -->
-            <div class="results-bar">
-                <span>Showing <strong>{{ products().length }}</strong> products</span>
-            </div>
-
-            <!-- TABLE VIEW -->
-            @if(viewMode() === 'table') {
-            <div class="table-wrap">
-                <table class="responsive-table">
-                    <thead>
-                        <tr>
-                            <th>SKU</th>
-                            <th class="th-sort" (click)="setSort('name')">
-                              Product
-                              <span class="material-symbols-outlined th-sort-icon">{{ sortIcon('name') }}</span>
-                            </th>
-                            <th>Category</th>
-                            <th>Brand</th>
-                            <th class="th-sort" (click)="setSort('stock')">
-                              Stock
-                              <span class="material-symbols-outlined th-sort-icon">{{ sortIcon('stock') }}</span>
-                            </th>
-                            <th>Purchase ₹</th>
-                            <th class="th-sort" (click)="setSort('price')">
-                              Selling ₹
-                              <span class="material-symbols-outlined th-sort-icon">{{ sortIcon('price') }}</span>
-                            </th>
-                            <th>Wholesale ₹</th>
-                            <th class="th-sort" (click)="setSort('margin')">
-                              Margin
-                              <span class="material-symbols-outlined th-sort-icon">{{ sortIcon('margin') }}</span>
-                            </th>
-                            <th>GST</th>
-                            <th>Location</th>
-                            <th>Status</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @for(p of products(); track p.id) {
-                        <tr>
-                            <td data-label="SKU" class="mono">{{ p.sku }}</td>
-                            <td data-label="Product">
-                                <div class="prod-name">{{ p.name }}</div>
-                                <div class="prod-unit">{{ p.unit }}</div>
-                            </td>
-                            <td data-label="Category"><span class="badge" [class]="categoryClass(p.category)">{{ p.category }}</span></td>
-                            <td data-label="Brand" class="muted">{{ p.brand }}</td>
-                            <td data-label="Stock">
-                                <div class="stock-cell">
-                                    <span class="stock-num" [class.low]="p.stock <= p.minStock">{{ p.stock }}</span>
-                                    <span class="stock-min">/ {{ p.minStock }} min</span>
-                                </div>
-                            </td>
-                            <td data-label="Purchase" class="amount">₹{{ p.purchasePrice | number }}</td>
-                            <td data-label="Selling" class="amount primary">₹{{ p.sellingPrice | number }}</td>
-                            <td data-label="Wholesale" class="amount">₹{{ p.wholesalePrice | number }}</td>
-                            <td data-label="Margin">
-                                <span class="margin-badge" [class.good]="margin(p) >= 20" [class.low]="margin(p) < 15">
-                                    {{ margin(p) }}%
-                                </span>
-                            </td>
-                            <td data-label="GST" class="muted">{{ p.gst }}%</td>
-                            <td data-label="Location" class="muted">{{ p.warehouse }} · {{ p.rack }}</td>
-                            <td data-label="Status"><span class="badge" [class]="statusClass(p.status)">{{ p.status }}</span></td>
-                            <td data-label="Actions" class="actions-cell">
-                                <div class="row-actions">
-                                    <button class="icon-btn" (click)="openEditModal(p)" title="Edit product">
-                                        <span class="material-symbols-outlined">edit</span>
-                                    </button>
-                                    <button class="icon-btn danger" (click)="deleteProduct(p)" title="Delete product">
-                                        <span class="material-symbols-outlined">delete</span>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        }
-                        @empty {
-                        <tr><td colspan="13" class="no-label" style="text-align:center;padding:32px;color:#94a3b8;font-style:italic">No products found. Add your first product to get started!</td></tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-            }
-
-            <!-- GRID VIEW -->
-            @if(viewMode() === 'grid') {
-            <div class="prod-grid">
-                @for(p of products(); track p.id) {
-                <div class="prod-card">
-                    <div class="prod-card__top">
-                        <span class="badge" [class]="categoryClass(p.category)">{{ p.category }}</span>
-                        <span class="badge" [class]="statusClass(p.status)">{{ p.status }}</span>
-                    </div>
-                    <div class="prod-card__icon">
-                        <span class="material-symbols-outlined">inventory_2</span>
-                    </div>
-                    <div class="prod-card__name">{{ p.name }}</div>
-                    <div class="prod-card__brand">{{ p.brand }} · {{ p.unit }}</div>
-                    <div class="prod-card__prices">
-                        <div class="price-row">
-                            <span>Selling</span><strong>₹{{ p.sellingPrice | number }}</strong>
-                        </div>
-                        <div class="price-row">
-                            <span>Purchase</span><span>₹{{ p.purchasePrice | number }}</span>
-                        </div>
-                    </div>
-                    <div class="prod-card__footer">
-                        <div class="stock-info" [class.low]="p.stock <= p.minStock">
-                            <span class="material-symbols-outlined">inventory</span>
-                            Stock: {{ p.stock }} / {{ p.minStock }}
-                        </div>
-                        <div class="prod-sku">{{ p.sku }}</div>
-                    </div>
-                </div>
-                } @empty {
-                <div style="grid-column:1/-1;text-align:center;padding:40px;color:#94a3b8;font-style:italic">
-                    <span class="material-symbols-outlined" style="font-size:40px;display:block;margin-bottom:8px;opacity:0.5">inventory_2</span>
-                    No products found. Add your first product to get started!
-                </div>
-                }
-            </div>
-            }
-
+          </button>
+          }
         </div>
+      }
+
+      <!-- ══ PRODUCT CARDS / TABLE (sub-category selected OR all products) ══ -->
+      @if(navLevel() === 'products') {
+
+        <!-- TOOLBAR -->
+        <div class="toolbar">
+          <div class="toolbar__search">
+            <span class="material-symbols-outlined">search</span>
+            <input type="text" placeholder="Search products..."
+              [value]="searchQuery()"
+              (input)="searchQuery.set($any($event.target).value)">
+            @if(searchQuery()) {
+              <button class="cat-search__clear" (click)="searchQuery.set('')">
+                <span class="material-symbols-outlined">close</span>
+              </button>
+            }
+          </div>
+          <div class="toolbar__filters">
+            <select (change)="selectedStatus.set($any($event.target).value)">
+              <option value="all">All Status</option>
+              <option value="In Stock">In Stock</option>
+              <option value="Low Stock">Low Stock</option>
+              <option value="Out of Stock">Out of Stock</option>
+            </select>
+            <div class="view-toggle">
+              <button [class.active]="viewMode() === 'grid'"  (click)="setView('grid')"  title="Card view">
+                <span class="material-symbols-outlined">grid_view</span>
+              </button>
+              <button [class.active]="viewMode() === 'table'" (click)="setView('table')" title="Table view">
+                <span class="material-symbols-outlined">table_rows</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- RESULTS COUNT + SORT -->
+        <div class="results-bar">
+          <span>{{ products().length }} products</span>
+          <div class="sort-pills">
+            @for(opt of sortOptions; track opt.key) {
+              <button class="sort-pill" [class.active]="isSorted(opt.key)" (click)="setSort(opt.key)">
+                {{ opt.label }}
+                @if(isSorted(opt.key)) {
+                  <span class="material-symbols-outlined sort-arrow">{{ sortIcon(opt.key) }}</span>
+                }
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- ── CARD VIEW (default, image-first) ── -->
+        @if(viewMode() === 'grid') {
+        <div class="prod-grid">
+          @for(p of products(); track p.id) {
+          <div class="prod-card">
+
+            <!-- Image -->
+            <div class="prod-card__img-wrap">
+              @if(p.image) {
+                <img [src]="p.image" [alt]="p.name" class="prod-card__img"
+                  (error)="onImgError($event)" loading="lazy">
+              }
+              <div class="prod-card__img-fallback">
+                <span class="material-symbols-outlined">inventory_2</span>
+              </div>
+              <!-- Stock badge overlaid on image -->
+              <span class="prod-card__stock-badge" [class]="statusClass(p.status)">
+                {{ p.stock }} left
+              </span>
+            </div>
+
+            <!-- Info -->
+            <div class="prod-card__body">
+              <div class="prod-card__name">{{ p.name }}</div>
+              <div class="prod-card__brand">{{ p.brand }} · {{ p.unit }}</div>
+              <div class="prod-card__price">₹{{ p.sellingPrice | number }}</div>
+              <div class="prod-card__purchase">Cost: ₹{{ p.purchasePrice | number }}</div>
+            </div>
+
+            <!-- Actions -->
+            <div class="prod-card__actions">
+              <button class="icon-btn" (click)="openEditModal(p)" title="Edit">
+                <span class="material-symbols-outlined">edit</span>
+              </button>
+              <button class="icon-btn danger" (click)="deleteProduct(p)" title="Delete">
+                <span class="material-symbols-outlined">delete_outline</span>
+              </button>
+            </div>
+
+          </div>
+          } @empty {
+          <div class="empty-state-block">
+            <span class="material-symbols-outlined">inventory_2</span>
+            <p>No products found.</p>
+            <button class="btn btn--primary" (click)="openAddModal()">
+              <span class="material-symbols-outlined">add</span> Add Product
+            </button>
+          </div>
+          }
+        </div>
+        }
+
+        <!-- ── TABLE VIEW ── -->
+        @if(viewMode() === 'table') {
+        <div class="table-wrap">
+          <table class="responsive-table">
+            <thead>
+              <tr>
+                <th></th>
+                <th>Product</th>
+                <th>Sub-Category</th>
+                <th>Brand</th>
+                <th>Stock</th>
+                <th>Selling ₹</th>
+                <th>Purchase ₹</th>
+                <th>Margin</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for(p of products(); track p.id) {
+              <tr>
+                <td class="no-label img-cell">
+                  @if(p.image) {
+                    <img [src]="p.image" [alt]="p.name" class="table-img" (error)="onImgError($event)" loading="lazy">
+                  } @else {
+                    <span class="material-symbols-outlined table-img-fallback">inventory_2</span>
+                  }
+                </td>
+                <td data-label="Product">
+                  <div class="prod-name">{{ p.name }}</div>
+                  <div class="prod-unit muted">{{ p.sku }} · {{ p.unit }}</div>
+                </td>
+                <td data-label="Sub-Category" class="muted">{{ p.subCategory }}</td>
+                <td data-label="Brand" class="muted">{{ p.brand }}</td>
+                <td data-label="Stock">
+                  <span class="stock-num" [class.low]="p.stock <= p.minStock">{{ p.stock }}</span>
+                  <span class="stock-min muted"> / {{ p.minStock }}</span>
+                </td>
+                <td data-label="Selling" class="amount primary">₹{{ p.sellingPrice | number }}</td>
+                <td data-label="Purchase" class="amount">₹{{ p.purchasePrice | number }}</td>
+                <td data-label="Margin">
+                  <span class="margin-badge" [class.good]="margin(p) >= 20" [class.low]="margin(p) < 15">
+                    {{ margin(p) }}%
+                  </span>
+                </td>
+                <td data-label="Status">
+                  <span class="badge" [class]="statusClass(p.status)">{{ p.status }}</span>
+                </td>
+                <td data-label="Actions" class="actions-cell">
+                  <div class="row-actions">
+                    <button class="icon-btn" (click)="openEditModal(p)" title="Edit">
+                      <span class="material-symbols-outlined">edit</span>
+                    </button>
+                    <button class="icon-btn danger" (click)="deleteProduct(p)" title="Delete">
+                      <span class="material-symbols-outlined">delete</span>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              }
+              @empty {
+              <tr>
+                <td colspan="10" class="no-label" style="text-align:center;padding:32px;color:#94a3b8;font-style:italic">
+                  No products found.
+                </td>
+              </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        }
+
+      }
+      <!-- end navLevel === products -->
+
     </div>
-    @if(toast()) {
-  <div class="toast">{{ toast() }}</div>
-}
+    <!-- end prod-panel -->
+
+  </div>
+  <!-- end inv-body -->
+
+  @if(toast()) {
+    <div class="toast">{{ toast() }}</div>
+  }
+
 </div>
 
-<!-- ADD / EDIT PRODUCT MODAL -->
+<!-- ══ ADD / EDIT PRODUCT MODAL ══════════════════════════════════════════════ -->
 @if(showAddModal()) {
 <div class="modal-backdrop" (click)="showAddModal.set(false)">
   <div class="modal" (click)="$event.stopPropagation()">
+
     <div class="modal__header">
       <h2 class="modal__title">
         <span class="material-symbols-outlined">{{ editingProduct() ? 'edit' : 'add_box' }}</span>
@@ -248,25 +315,29 @@
     </div>
 
     <div class="modal__body">
+
       <!-- Row 1: Name + SKU -->
       <div class="form-row">
         <div class="form-group form-group--lg">
           <label>Product Name <span class="req">*</span></label>
           <input type="text" placeholder="e.g. PVC Pipe 1 inch"
-            [value]="form().name" (input)="updateForm('name', $any($event.target).value)">
+            [value]="form().name"
+            (input)="updateForm('name', $any($event.target).value)">
         </div>
         <div class="form-group">
           <label>SKU <span class="req">*</span></label>
           <input type="text" placeholder="e.g. PLB-001"
-            [value]="form().sku" (input)="updateForm('sku', $any($event.target).value)">
+            [value]="form().sku"
+            (input)="updateForm('sku', $any($event.target).value)">
         </div>
       </div>
 
-      <!-- Row 2: Category + Brand + Unit -->
+      <!-- Row 2: Category + Sub-Category -->
       <div class="form-row">
         <div class="form-group">
           <label>Category</label>
-          <select [value]="form().category" (change)="updateForm('category', $any($event.target).value)">
+          <select [value]="form().category"
+            (change)="updateForm('category', $any($event.target).value)">
             <option>Plumbing</option>
             <option>Electrical</option>
             <option>Hardware</option>
@@ -277,14 +348,29 @@
             <option>Building</option>
           </select>
         </div>
+        <div class="form-group form-group--lg">
+          <label>Sub-Category</label>
+          <select [value]="form().subCategory"
+            (change)="updateForm('subCategory', $any($event.target).value)">
+            @for(sub of formSubCategories(); track sub.id) {
+              <option [value]="sub.id">{{ sub.label }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      <!-- Row 3: Brand + Unit -->
+      <div class="form-row">
         <div class="form-group">
           <label>Brand</label>
           <input type="text" placeholder="e.g. Supreme"
-            [value]="form().brand" (input)="updateForm('brand', $any($event.target).value)">
+            [value]="form().brand"
+            (input)="updateForm('brand', $any($event.target).value)">
         </div>
         <div class="form-group">
           <label>Unit</label>
-          <select [value]="form().unit" (change)="updateForm('unit', $any($event.target).value)">
+          <select [value]="form().unit"
+            (change)="updateForm('unit', $any($event.target).value)">
             <option>Piece</option>
             <option>Meter</option>
             <option>Foot</option>
@@ -298,26 +384,40 @@
         </div>
       </div>
 
-      <!-- Row 3: Prices -->
+      <!-- Row 4: Image URL -->
+      <div class="form-row">
+        <div class="form-group form-group--full">
+          <label>Product Image URL (optional)</label>
+          <input type="text" placeholder="https://..."
+            [value]="form().image"
+            (input)="updateForm('image', $any($event.target).value)">
+        </div>
+      </div>
+
+      <!-- Row 5: Prices -->
       <div class="form-row">
         <div class="form-group">
           <label>Purchase Price (₹)</label>
           <input type="number" min="0" placeholder="0"
-            [value]="form().purchasePrice" (input)="updateForm('purchasePrice', +$any($event.target).value)">
+            [value]="form().purchasePrice"
+            (input)="updateForm('purchasePrice', +$any($event.target).value)">
         </div>
         <div class="form-group">
           <label>Selling Price (₹)</label>
           <input type="number" min="0" placeholder="0"
-            [value]="form().sellingPrice" (input)="updateForm('sellingPrice', +$any($event.target).value)">
+            [value]="form().sellingPrice"
+            (input)="updateForm('sellingPrice', +$any($event.target).value)">
         </div>
         <div class="form-group">
           <label>Wholesale Price (₹)</label>
           <input type="number" min="0" placeholder="0"
-            [value]="form().wholesalePrice" (input)="updateForm('wholesalePrice', +$any($event.target).value)">
+            [value]="form().wholesalePrice"
+            (input)="updateForm('wholesalePrice', +$any($event.target).value)">
         </div>
         <div class="form-group form-group--sm">
           <label>GST %</label>
-          <select [value]="form().gst" (change)="updateForm('gst', +$any($event.target).value)">
+          <select [value]="form().gst"
+            (change)="updateForm('gst', +$any($event.target).value)">
             <option value="0">0%</option>
             <option value="5">5%</option>
             <option value="12">12%</option>
@@ -327,43 +427,50 @@
         </div>
       </div>
 
-      <!-- Row 4: Stock -->
+      <!-- Row 6: Stock -->
       <div class="form-row">
         <div class="form-group">
           <label>Opening Stock</label>
           <input type="number" min="0" placeholder="0"
-            [value]="form().stock" (input)="updateForm('stock', +$any($event.target).value)">
+            [value]="form().stock"
+            (input)="updateForm('stock', +$any($event.target).value)">
         </div>
         <div class="form-group">
           <label>Min Stock</label>
           <input type="number" min="0" placeholder="10"
-            [value]="form().minStock" (input)="updateForm('minStock', +$any($event.target).value)">
+            [value]="form().minStock"
+            (input)="updateForm('minStock', +$any($event.target).value)">
         </div>
         <div class="form-group">
           <label>Max Stock</label>
           <input type="number" min="0" placeholder="100"
-            [value]="form().maxStock" (input)="updateForm('maxStock', +$any($event.target).value)">
+            [value]="form().maxStock"
+            (input)="updateForm('maxStock', +$any($event.target).value)">
         </div>
       </div>
 
-      <!-- Row 5: Location + Barcode -->
+      <!-- Row 7: Location + Barcode -->
       <div class="form-row">
         <div class="form-group">
           <label>Warehouse</label>
           <input type="text" placeholder="WH-A"
-            [value]="form().warehouse" (input)="updateForm('warehouse', $any($event.target).value)">
+            [value]="form().warehouse"
+            (input)="updateForm('warehouse', $any($event.target).value)">
         </div>
         <div class="form-group">
           <label>Rack / Shelf</label>
           <input type="text" placeholder="R-01"
-            [value]="form().rack" (input)="updateForm('rack', $any($event.target).value)">
+            [value]="form().rack"
+            (input)="updateForm('rack', $any($event.target).value)">
         </div>
         <div class="form-group form-group--lg">
           <label>Barcode</label>
           <input type="text" placeholder="8901234560011"
-            [value]="form().barcode" (input)="updateForm('barcode', $any($event.target).value)">
+            [value]="form().barcode"
+            (input)="updateForm('barcode', $any($event.target).value)">
         </div>
       </div>
+
     </div>
 
     <div class="modal__footer">
@@ -373,6 +480,7 @@
         {{ editingProduct() ? 'Save Changes' : 'Add Product' }}
       </button>
     </div>
+
   </div>
 </div>
 }
