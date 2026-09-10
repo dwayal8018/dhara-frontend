@@ -73,7 +73,12 @@ export class Customers implements OnInit {
     this.customerService.getLedger(this.selectedId())
   );
 
-  selectCustomer(id: number) { this.selectedId.set(id); }
+  mobileView = signal<'list' | 'detail'>('list');
+
+  selectCustomer(id: number) {
+    this.selectedId.set(id);
+    this.mobileView.set('detail');
+  }
 
   // ── Record payment modal ─────────────────────────────────────────────────
   showPaymentModal = signal(false);

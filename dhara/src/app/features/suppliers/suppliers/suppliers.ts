@@ -58,7 +58,12 @@ export class Suppliers {
     this.supplierService.getLedger(this.selectedId())
   );
 
-  selectSupplier(id: number) { this.selectedId.set(id); }
+  mobileView = signal<'list' | 'detail'>('list');
+
+  selectSupplier(id: number) {
+    this.selectedId.set(id);
+    this.mobileView.set('detail');
+  }
 
   // ── Record payment modal ──────────────────────────────────────────────────
   showPayModal  = signal(false);

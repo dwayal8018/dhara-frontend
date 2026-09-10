@@ -1,90 +1,109 @@
 <div class="sales">
 
-  <!-- PAGE HEADER -->
+  <!-- ═══ PAGE HEADER ══════════════════════════════════════════════════════ -->
   <div class="page-header">
     <div class="page-header__left">
       <h1 class="page-title">Sales</h1>
-      <p class="page-subtitle">Create invoices and manage your sales transactions</p>
+      <p class="page-subtitle">
+        {{ activeTab() === 'invoice' ? 'Review order · Generate invoice · Collect payment' : 'View and manage all sales invoices' }}
+      </p>
     </div>
     <div class="page-header__right">
       <div class="tab-toggle">
-        <button [class.active]="activeTab() === 'new'" (click)="activeTab.set('new')">
-          <span class="material-symbols-outlined">add_shopping_cart</span> New Sale
+        <button [class.active]="activeTab() === 'invoice'" (click)="activeTab.set('invoice')">
+          <span class="material-symbols-outlined">receipt_long</span>
+          Invoice
+          @if(cartService.cartCount() > 0) {
+            <span class="inv-tab-badge">{{ cartService.cartCount() }}</span>
+          }
         </button>
         <button [class.active]="activeTab() === 'history'" (click)="activeTab.set('history')">
-          <span class="material-symbols-outlined">history</span> Invoice History
+          <span class="material-symbols-outlined">history</span>
+          History
         </button>
       </div>
     </div>
   </div>
 
 
-  <!-- ═══ NEW SALE TAB ═══════════════════════════════════════════════════ -->
-  @if(activeTab() === 'new') {
-  <div class="pos-layout">
+  <!-- ═══════════════════════════════════════════════════════════
+       INVOICE TAB
+  ═══════════════════════════════════════════════════════════ -->
+  @if(activeTab() === 'invoice') {
+  <div class="invoice-screen">
 
-    <!-- LEFT: Product Catalogue -->
-    <div class="catalogue-panel">
-      <div class="panel-head">
-        <span class="panel-head__title">Products</span>
-        <span class="panel-head__count">{{ filteredProducts().length }} items</span>
+    @if(cartService.cart().length === 0) {
+      <div class="empty-state full">
+        <span class="material-symbols-outlined">add_shopping_cart</span>
+        <p>No items in the order.</p>
+        <p class="empty-hint">Go to Inventory and tap <strong>+ Add</strong> on any product to start an order.</p>
+        <a class="btn btn--primary" routerLink="/inventory">
+          <span class="material-symbols-outlined">inventory_2</span>
+          Go to Inventory
+        </a>
       </div>
+    } @else {
 
-      <!-- Search -->
-      <div class="cat-search">
-        <span class="material-symbols-outlined">search</span>
-        <input type="text" placeholder="Search by name or SKU…"
-          [value]="productSearch()"
-          (input)="productSearch.set($any($event.target).value)">
-        @if(productSearch()) {
-          <button class="cat-search__clear" (click)="productSearch.set('')">
-            <span class="material-symbols-outlined">close</span>
-          </button>
-        }
+    <!-- Invoice meta strip -->
+    <div class="inv-meta">
+      <div class="inv-meta__number">
+        <span class="material-symbols-outlined">receipt_long</span>
+        <strong>{{ invoiceNumber() }}</strong>
       </div>
-
-      <!-- Product list -->
-      <div class="cat-list">
-        @for(p of filteredProducts(); track p.id) {
-          <button class="cat-item" (click)="addToCart(p)" [class.low-stock]="p.stock <= 5">
-            <div class="cat-item__icon">
-              <span class="material-symbols-outlined">inventory_2</span>
-            </div>
-            <div class="cat-item__info">
-              <span class="cat-item__name">{{ p.name }}</span>
-              <span class="cat-item__meta">{{ p.sku }} · {{ p.unit }}</span>
-            </div>
-            <div class="cat-item__right">
-              <span class="cat-item__price">₹{{ p.sellingPrice | number }}</span>
-              <span class="cat-item__stock" [class.low]="p.stock <= 5">
-                {{ p.stock }} left
-              </span>
-            </div>
-          </button>
-        }
-        @if(filteredProducts().length === 0) {
-          <div class="empty-state">
-            <span class="material-symbols-outlined">search_off</span>
-            <p>No products match "{{ productSearch() }}"</p>
-          </div>
-        }
-      </div>
+      <div class="inv-meta__date">{{ today | date:'dd MMM yyyy, hh:mm a' }}</div>
+      <div class="inv-meta__item-count">{{ cartService.cartCount() }} item{{ cartService.cartCount() !== 1 ? 's' : '' }}</div>
     </div>
 
-
-    <!-- RIGHT: Invoice Builder -->
-    <div class="invoice-panel">
-
-      <!-- Invoice header row -->
-      <div class="inv-meta">
-        <div class="inv-meta__number">
-          <span class="material-symbols-outlined">receipt_long</span>
-          <strong>{{ invoiceNumber() }}</strong>
-        </div>
-        <div class="inv-meta__date">{{ today | date:'dd MMM yyyy, hh:mm a' }}</div>
+    <!-- ── SELECTED ITEMS ── -->
+    <div class="invoice-items-card">
+      <div class="invoice-items-head">
+        <span>Item</span>
+        <span>Qty</span>
+        <span>Price</span>
+        <span>Disc%</span>
+        <span>Total</span>
+        <span></span>
       </div>
+      @for(item of cartService.cart(); track item.product.id) {
+        <div class="invoice-item-row">
+          <div class="invoice-item-name">
+            <span class="invoice-item-product">{{ item.product.name }}</span>
+            <span class="invoice-item-meta">{{ item.product.sku }} · GST {{ item.product.gst }}%</span>
+          </div>
+          <div class="qty-stepper">
+            <button (click)="cartService.updateQty(item.product.id, item.qty - 1)">
+              <span class="material-symbols-outlined">remove</span>
+            </button>
+            <input type="number" min="1" [value]="item.qty"
+              (change)="cartService.updateQty(item.product.id, +$any($event.target).value)">
+            <button (click)="cartService.updateQty(item.product.id, item.qty + 1)">
+              <span class="material-symbols-outlined">add</span>
+            </button>
+          </div>
+          <div class="price-input">
+            <span>₹</span>
+            <input type="number" min="0" [value]="item.price"
+              (change)="cartService.updatePrice(item.product.id, +$any($event.target).value)">
+          </div>
+          <div class="disc-input">
+            <input type="number" min="0" max="100" [value]="item.discount"
+              (change)="cartService.updateLineDiscount(item.product.id, +$any($event.target).value)">
+            <span>%</span>
+          </div>
+          <div class="invoice-item-total">
+            ₹{{ (item.qty * item.price * (1 - item.discount/100)) | number:'1.0-0' }}
+          </div>
+          <button class="remove-btn" (click)="cartService.removeFromCart(item.product.id)">
+            <span class="material-symbols-outlined">delete_outline</span>
+          </button>
+        </div>
+      }
+    </div>
 
-      <!-- Customer details -->
+    <!-- ── BILLING ── -->
+    <div class="billing-card">
+
+      <!-- Customer -->
       <div class="customer-row">
         <div class="field">
           <label>Customer Name</label>
@@ -100,162 +119,92 @@
         </div>
       </div>
 
-      <!-- Cart items -->
-      <div class="cart-section">
-        <div class="cart-head">
-          <span>Item</span>
-          <span>Qty</span>
-          <span>Unit Price</span>
-          <span>Disc %</span>
-          <span>Amount</span>
-          <span></span>
+      <!-- Totals -->
+      <div class="totals">
+        <div class="totals__row">
+          <span>Subtotal</span>
+          <span>₹{{ subtotal() | number:'1.0-0' }}</span>
         </div>
+        <div class="totals__row">
+          <span>
+            Extra Discount
+            <input class="inline-input" type="number" min="0" max="100"
+              [value]="extraDiscount()"
+              (input)="extraDiscount.set(+$any($event.target).value)">%
+          </span>
+          <span class="discount-val">–₹{{ (subtotal() * extraDiscount() / 100) | number:'1.0-0' }}</span>
+        </div>
+        <div class="totals__row">
+          <span>GST</span>
+          <span>₹{{ gstAmount() | number:'1.0-0' }}</span>
+        </div>
+        <div class="totals__row totals__row--grand">
+          <span>Grand Total</span>
+          <span>₹{{ grandTotal() | number:'1.0-0' }}</span>
+        </div>
+      </div>
 
-        @if(cart().length === 0) {
-          <div class="cart-empty">
-            <span class="material-symbols-outlined">add_shopping_cart</span>
-            <p>Click products on the left to add them here</p>
-          </div>
-        }
-
-        @for(item of cart(); track item.product.id) {
-          <div class="cart-row">
-            <div class="cart-row__name">
-              <span class="cart-row__product">{{ item.product.name }}</span>
-              <span class="cart-row__sku">{{ item.product.sku }} · GST {{ item.product.gst }}%</span>
-            </div>
-
-            <!-- Qty stepper -->
-            <div class="qty-stepper">
-              <button (click)="updateQty(item.product.id, item.qty - 1)">
-                <span class="material-symbols-outlined">remove</span>
-              </button>
-              <input type="number" min="1"
-                [value]="item.qty"
-                (change)="updateQty(item.product.id, +$any($event.target).value)">
-              <button (click)="updateQty(item.product.id, item.qty + 1)">
-                <span class="material-symbols-outlined">add</span>
-              </button>
-            </div>
-
-            <!-- Unit price -->
-            <div class="price-input">
-              <span>₹</span>
-              <input type="number" min="0"
-                [value]="item.price"
-                (change)="updatePrice(item.product.id, +$any($event.target).value)">
-            </div>
-
-            <!-- Discount -->
-            <div class="disc-input">
-              <input type="number" min="0" max="100"
-                [value]="item.discount"
-                (change)="updateLineDiscount(item.product.id, +$any($event.target).value)">
-              <span>%</span>
-            </div>
-
-            <!-- Line total -->
-            <div class="cart-row__total">
-              ₹{{ (item.qty * item.price * (1 - item.discount / 100)) | number:'1.0-0' }}
-            </div>
-
-            <button class="remove-btn" (click)="removeFromCart(item.product.id)" title="Remove">
-              <span class="material-symbols-outlined">delete_outline</span>
-            </button>
-          </div>
+      <!-- Payment mode -->
+      <div class="payment-modes">
+        @for(m of paymentModes; track m) {
+          <button class="mode-btn" [class.active]="paymentMode() === m"
+            (click)="setPaymentMode(m)">
+            <span class="material-symbols-outlined">{{ modeIcon(m) }}</span>
+            {{ m }}
+          </button>
         }
       </div>
 
-      <!-- Summary + Payment -->
-      <div class="billing-section">
-
-        <!-- Totals -->
-        <div class="totals">
-          <div class="totals__row">
-            <span>Subtotal</span>
-            <span>₹{{ subtotal() | number:'1.0-0' }}</span>
-          </div>
-          <div class="totals__row">
-            <span>
-              Extra Discount
-              <input class="inline-input" type="number" min="0" max="100"
-                [value]="extraDiscount()"
-                (input)="extraDiscount.set(+$any($event.target).value)">%
-            </span>
-            <span class="discount-val">
-              – ₹{{ (subtotal() * extraDiscount() / 100) | number:'1.0-0' }}
-            </span>
-          </div>
-          <div class="totals__row">
-            <span>GST</span>
-            <span>₹{{ gstAmount() | number:'1.0-0' }}</span>
-          </div>
-          <div class="totals__row totals__row--grand">
-            <span>Grand Total</span>
-            <span>₹{{ grandTotal() | number:'1.0-0' }}</span>
-          </div>
-        </div>
-
-        <!-- Payment mode -->
-        <div class="payment-modes">
-          @for(m of paymentModes; track m) {
-            <button class="mode-btn" [class.active]="paymentMode() === m"
-              (click)="setPaymentMode(m)">
-              <span class="material-symbols-outlined">{{ modeIcon(m) }}</span>
-              {{ m }}
-            </button>
-          }
-        </div>
-
-        <!-- Amount paid -->
-        <div class="paid-row">
-          <div class="field">
-            <label>Amount Paid (₹)</label>
-            <div class="paid-input-wrap">
-              <input type="number" min="0"
-                [value]="amountPaid()"
-                (input)="amountPaid.set(+$any($event.target).value)">
-              <button class="pay-full-btn" (click)="payFull()">Pay Full</button>
-            </div>
-          </div>
-          <div class="balance-box" [class.positive]="balance() > 0" [class.zero]="balance() <= 0">
-            <span class="balance-label">{{ balance() > 0 ? 'Balance Due' : 'Change' }}</span>
-            <span class="balance-amount">₹{{ (balance() > 0 ? balance() : -balance()) | number:'1.0-0' }}</span>
-          </div>
-        </div>
-
-        <!-- Notes -->
+      <!-- Amount paid + balance -->
+      <div class="paid-row">
         <div class="field">
-          <label>Notes (optional)</label>
-          <input type="text" placeholder="e.g. Delivery scheduled for tomorrow"
-            [value]="notes()" (input)="notes.set($any($event.target).value)">
+          <label>Amount Paid (₹)</label>
+          <div class="paid-input-wrap">
+            <input type="number" min="0"
+              [value]="amountPaid()"
+              (input)="amountPaid.set(+$any($event.target).value)">
+            <button class="pay-full-btn" (click)="payFull()">Pay Full</button>
+          </div>
         </div>
-
-        <!-- Action buttons -->
-        <div class="action-row">
-          <button class="btn btn--ghost" (click)="clearCart()">
-            <span class="material-symbols-outlined">clear_all</span> Clear
-          </button>
-          <button class="btn btn--outline" (click)="printInvoice()">
-            <span class="material-symbols-outlined">print</span> Print
-          </button>
-          <button class="btn btn--primary" (click)="saveSale()">
-            <span class="material-symbols-outlined">check_circle</span> Save Invoice
-          </button>
+        <div class="balance-box" [class.positive]="balance() > 0" [class.zero]="balance() <= 0">
+          <span class="balance-label">{{ balance() > 0 ? 'Balance Due' : 'Change' }}</span>
+          <span class="balance-amount">₹{{ (balance() > 0 ? balance() : -balance()) | number:'1.0-0' }}</span>
         </div>
-
       </div>
+
+      <!-- Notes -->
+      <div class="field">
+        <label>Notes (optional)</label>
+        <input type="text" placeholder="e.g. Delivery scheduled for tomorrow"
+          [value]="notes()" (input)="notes.set($any($event.target).value)">
+      </div>
+
+      <!-- Actions -->
+      <div class="invoice-actions">
+        <button class="btn btn--ghost" (click)="cartService.clearCart()">
+          <span class="material-symbols-outlined">delete_sweep</span> Clear Order
+        </button>
+        <button class="btn btn--outline" (click)="printInvoice()">
+          <span class="material-symbols-outlined">print</span> Print
+        </button>
+        <button class="btn btn--primary" (click)="saveSale()">
+          <span class="material-symbols-outlined">check_circle</span> Save Invoice
+        </button>
+      </div>
+
     </div>
 
+    }
   </div>
   }
 
 
-  <!-- ═══ INVOICE HISTORY TAB ════════════════════════════════════════════ -->
+  <!-- ═══════════════════════════════════════════════════════════
+       HISTORY TAB
+  ═══════════════════════════════════════════════════════════ -->
   @if(activeTab() === 'history') {
   <div class="history-panel">
 
-    <!-- Toolbar -->
     <div class="history-toolbar">
       <div class="toolbar__search">
         <span class="material-symbols-outlined">search</span>
@@ -276,7 +225,6 @@
       </button>
     </div>
 
-    <!-- Stats row -->
     <div class="history-stats">
       <div class="hstat">
         <span class="hstat__label">Total Invoices</span>
@@ -296,7 +244,6 @@
       </div>
     </div>
 
-    <!-- Table -->
     <div class="table-wrap">
       <table class="responsive-table">
         <thead>
@@ -374,14 +321,17 @@
 
   </div>
   }
+  <!-- end History tab -->
 
 </div>
+<!-- end .sales -->
 
 @if(toast()) {
   <div class="toast">{{ toast() }}</div>
 }
 
-<!-- ══ PARTIAL PAYMENT MODAL ══════════════════════════════════════════════ -->
+
+<!-- ══ PARTIAL PAYMENT MODAL ═══════════════════════════════════════════════ -->
 @if(showPartialPayModal()) {
   <div class="modal-backdrop" (click)="showPartialPayModal.set(false)">
     <div class="pay-modal" (click)="$event.stopPropagation()">
@@ -397,7 +347,6 @@
       </div>
 
       @if(partialPayInvoice(); as inv) {
-        <!-- Invoice summary -->
         <div class="pay-modal__summary">
           <div class="pay-modal__inv-row">
             <span class="pay-modal__inv-num">{{ inv.invoice }}</span>
@@ -419,7 +368,6 @@
             </div>
           </div>
 
-          <!-- Quick amount chips -->
           <div class="pay-modal__chips">
             <span class="pay-modal__chips-label">Quick:</span>
             @for(pct of [25, 50, 75, 100]; track pct) {
@@ -435,7 +383,6 @@
           </div>
         </div>
 
-        <!-- Payment form -->
         <div class="pay-modal__form">
           <div class="pay-modal__field">
             <label>Amount (₹) <span class="req">*</span></label>
@@ -479,6 +426,7 @@
   </div>
 }
 
+
 <!-- ══ INVOICE DETAIL MODAL ════════════════════════════════════════════════ -->
 @if(showDetailModal()) {
   <div class="modal-backdrop" (click)="showDetailModal.set(false)">
@@ -511,7 +459,6 @@
           </div>
         </div>
 
-        <!-- Line items table -->
         <div class="detail-items">
           <table class="detail-table">
             <thead>
@@ -541,7 +488,6 @@
           </table>
         </div>
 
-        <!-- Totals -->
         <div class="detail-totals">
           <div class="detail-total-row"><span>Subtotal</span><span>₹{{ inv.subtotal | number }}</span></div>
           @if(inv.discount > 0) {
@@ -573,7 +519,8 @@
   </div>
 }
 
-<!-- ─── PRINT INVOICE (hidden on screen, shown only in print) ─────────────── -->
+
+<!-- PRINT INVOICE (hidden on screen, shown only in print) -->
 @if(printData()) {
 <div class="print-invoice" id="printInvoice">
   <div class="print-invoice__header">

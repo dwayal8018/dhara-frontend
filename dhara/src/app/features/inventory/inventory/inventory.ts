@@ -1,16 +1,19 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+﻿import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { CATEGORIES, SUBCATEGORIES, SubCategory, Product, Category, getSubCategories } from './inventory.data';
+import { CATEGORIES, SUBCATEGORIES, Product, Category, getSubCategories } from './inventory.data';
 import { Router } from '@angular/router';
 import { ProductService } from '../../../core/services/product.service';
+import { CategoryService, ManagedCategory, ManagedSubCategory } from '../../../core/services/category.service';
 import { exportToCsv } from '../../../core/utils/export-csv';
+import { CartService } from '../../../core/services/cart.service';
+import { SaleProduct } from '../../sales/sales/sales.data';
 
 export type SortKey = 'name' | 'stock' | 'price' | 'margin';
 export type SortDir = 'asc' | 'desc';
 
 // Navigation state: which level is the user on?
-export type NavLevel = 'subcategories' | 'products';
+export type NavLevel = 'categories' | 'subcategories' | 'products';
 
 @Component({
   selector: 'app-inventory',
@@ -22,9 +25,10 @@ export type NavLevel = 'subcategories' | 'products';
 })
 export class Inventory {
 
-  private readonly productService = inject(ProductService);
-
-  readonly allCategories = CATEGORIES;
+  private readonly productService  = inject(ProductService);
+  readonly categoryService         = inject(CategoryService);
+  readonly cartService             = inject(CartService);
+  private readonly router          = inject(Router);
 
   // ── Dynamic stats ─────────────────────────────────────────────────────────
   readonly stats = computed(() => {
@@ -34,56 +38,57 @@ export class Inventory {
     const outOfStock = products.filter(p => p.stock === 0).length;
     const totalValue = products.reduce((s, p) => s + p.stock * p.purchasePrice, 0);
     return [
-      { label: 'Total Products', value: String(total),                                    icon: 'inventory_2', color: '#2563eb' },
-      { label: 'Low Stock',      value: String(lowStock),                                  icon: 'warning',     color: '#f59e0b' },
-      { label: 'Out of Stock',   value: String(outOfStock),                                icon: 'block',       color: '#dc2626' },
-      { label: 'Total Value',    value: '₹' + totalValue.toLocaleString('en-IN'),          icon: 'payments',    color: '#16a34a' },
+      { label: 'Total Products', value: String(total),                           icon: 'inventory_2', color: '#2563eb' },
+      { label: 'Low Stock',      value: String(lowStock),                         icon: 'warning',     color: '#f59e0b' },
+      { label: 'Out of Stock',   value: String(outOfStock),                       icon: 'block',       color: '#dc2626' },
+      { label: 'Total Value',    value: '₹' + totalValue.toLocaleString('en-IN'), icon: 'payments',    color: '#16a34a' },
     ];
   });
 
-  // ── Dynamic category counts ───────────────────────────────────────────────
+  // ── Dynamic category counts — now driven by CategoryService ──────────────
   readonly dynamicCategories = computed(() => {
     const catMap     = this.productService.categories();
     const totalCount = this.productService.totalCount();
-    return this.allCategories.map(c =>
-      c.id === 'all'
-        ? { ...c, count: totalCount }
-        : { ...c, count: catMap.get(c.label) ?? 0 }
-    );
+    const managed    = this.categoryService.categories();
+
+    // Rebuild the "All Products" synthetic entry first
+    const all = { id: 'all', label: 'All Products', icon: 'apps', count: totalCount, image: '' };
+
+    const rest = managed.map(c => ({
+      id:    c.id,
+      label: c.label,
+      icon:  c.icon,
+      image: c.image,
+      count: catMap.get(c.label) ?? 0,
+    }));
+
+    return [all, ...rest];
   });
 
   // ── 3-Level navigation state ──────────────────────────────────────────────
-  // selectedCategory: 'all' | category-id  (left sidebar)
-  // selectedSubCategory: null | subCategory-id  (set when user taps a sub-card)
-  // navLevel: 'subcategories' | 'products'
-  //
-  // When selectedCategory === 'all' → skip sub-category level → go straight to products
-  // When a category is selected → show sub-category cards (navLevel='subcategories')
-  // When a sub-category is tapped → show product cards (navLevel='products')
-
   selectedCategory    = signal<string>('all');
   selectedSubCategory = signal<string | null>(null);
-  navLevel            = signal<NavLevel>('products'); // 'all' starts on products
+  navLevel            = signal<NavLevel>('categories');
 
   // Sub-categories for the currently selected main category
-  readonly currentSubCategories = computed<SubCategory[]>(() => {
+  readonly currentSubCategories = computed(() => {
     const cat = this.selectedCategory();
     if (cat === 'all') return [];
-    return SUBCATEGORIES.filter(s => s.category.toLowerCase() === cat);
+    return this.categoryService.subCategories().filter(s => s.category === cat);
   });
 
   // The selected SubCategory object (for header display)
-  readonly selectedSubCategoryObj = computed<SubCategory | null>(() => {
+  readonly selectedSubCategoryObj = computed(() => {
     const id = this.selectedSubCategory();
     if (!id) return null;
-    return SUBCATEGORIES.find(s => s.id === id) ?? null;
+    return this.categoryService.subCategories().find(s => s.id === id) ?? null;
   });
 
   // Category label for breadcrumb
   readonly selectedCategoryLabel = computed<string>(() => {
     const cat = this.selectedCategory();
     if (cat === 'all') return 'All Products';
-    return this.allCategories.find(c => c.id === cat)?.label ?? cat;
+    return this.categoryService.categories().find(c => c.id === cat)?.label ?? cat;
   });
 
   // ── Search & filters ──────────────────────────────────────────────────────
@@ -91,7 +96,7 @@ export class Inventory {
   selectedStatus = signal('all');
 
   // View mode — default CARD for image-first UX
-  viewMode       = signal<'table' | 'grid'>('grid');
+  viewMode = signal<'table' | 'grid'>('grid');
 
   // Add/edit modal
   showAddModal    = signal(false);
@@ -128,7 +133,6 @@ export class Inventory {
     const key    = this.sortKey();
     const dir    = this.sortDir();
 
-    // Filter
     if (q) {
       list = list.filter(p =>
         p.name.toLowerCase().includes(q) ||
@@ -147,7 +151,6 @@ export class Inventory {
       list = list.filter(p => p.status === status);
     }
 
-    // Sort
     const sortFn = (a: Product, b: Product): number => {
       let cmp = 0;
       if (key === 'name')   cmp = a.name.localeCompare(b.name);
@@ -162,45 +165,41 @@ export class Inventory {
 
   // ── Navigation actions ────────────────────────────────────────────────────
 
-  /** Click a category in the sidebar */
   setCategory(catId: string) {
     this.selectedCategory.set(catId);
     this.selectedSubCategory.set(null);
     this.searchQuery.set('');
 
     if (catId === 'all') {
-      // All products → skip sub-category level
       this.navLevel.set('products');
     } else {
-      const subs = getSubCategories(this.allCategories.find(c => c.id === catId)?.label ?? '');
-      if (subs.length > 0) {
-        this.navLevel.set('subcategories');
-      } else {
-        this.navLevel.set('products');
-      }
+      const subs = this.categoryService.subCategories().filter(s => s.category === catId);
+      this.navLevel.set(subs.length > 0 ? 'subcategories' : 'products');
     }
 
     this.sortKey.set('name');
     this.sortDir.set('asc');
   }
 
-  /** Click a sub-category card */
+  goToCategories() {
+    this.selectedCategory.set('all');
+    this.selectedSubCategory.set(null);
+    this.navLevel.set('categories');
+    this.searchQuery.set('');
+  }
+
   selectSubCategory(subId: string) {
     this.selectedSubCategory.set(subId);
     this.navLevel.set('products');
   }
 
-  /** Breadcrumb back: from products → subcategories */
   goBackToSubCategories() {
     this.selectedSubCategory.set(null);
     this.navLevel.set('subcategories');
     this.searchQuery.set('');
   }
 
-  /** Breadcrumb back: to all products */
-  goToAll() {
-    this.setCategory('all');
-  }
+  goToAll() { this.goToCategories(); }
 
   setView(mode: 'table' | 'grid') { this.viewMode.set(mode); }
 
@@ -213,9 +212,9 @@ export class Inventory {
   }
 
   statusClass(status: string): string {
-    if (status === 'In Stock')    return 'success';
-    if (status === 'Low Stock')   return 'warning';
-    if (status === 'Out of Stock')return 'danger';
+    if (status === 'In Stock')     return 'success';
+    if (status === 'Low Stock')    return 'warning';
+    if (status === 'Out of Stock') return 'danger';
     return '';
   }
 
@@ -235,38 +234,37 @@ export class Inventory {
   }
 
   trackById(_: number, item: { id: number }) { return item.id; }
-  trackBySubId(_: number, item: SubCategory) { return item.id; }
 
   showToast(msg: string) {
     this.toast.set(msg);
     setTimeout(() => this.toast.set(''), 3000);
   }
 
-  // ── Product image fallback ────────────────────────────────────────────────
   onImgError(event: Event) {
+    // Hide the broken image — the fallback div (z-index:0) shows through naturally
     (event.target as HTMLImageElement).style.display = 'none';
   }
 
-  // ── Add / Edit modal ──────────────────────────────────────────────────────
-  // Form state
+  // ── Add / Edit Product modal ──────────────────────────────────────────────
+
   form = signal({
-    name: '', sku: '', category: 'Plumbing' as Category, subCategory: 'plumbing-pipes',
+    name: '', sku: '', categoryId: 'plumbing', subCategory: '',
     brand: '', unit: 'Piece', purchasePrice: 0, sellingPrice: 0, wholesalePrice: 0,
     gst: 18, stock: 0, minStock: 10, maxStock: 100,
     warehouse: 'WH-A', rack: 'R-01', barcode: '', image: ''
   });
 
-  // Sub-categories available for the current form category
   readonly formSubCategories = computed(() =>
-    SUBCATEGORIES.filter(s => s.category === this.form().category)
+    this.categoryService.subCategories().filter(s => s.category === this.form().categoryId)
   );
 
   openAddModal() {
     this.editingProduct.set(null);
-    const defaultCat: Category = 'Plumbing';
-    const defaultSub = SUBCATEGORIES.find(s => s.category === defaultCat)?.id ?? '';
+    const cats = this.categoryService.categories();
+    const defaultCatId = cats[0]?.id ?? '';
+    const defaultSub = this.categoryService.subCategories().find(s => s.category === defaultCatId)?.id ?? '';
     this.form.set({
-      name: '', sku: '', category: defaultCat, subCategory: defaultSub,
+      name: '', sku: '', categoryId: defaultCatId, subCategory: defaultSub,
       brand: '', unit: 'Piece', purchasePrice: 0, sellingPrice: 0, wholesalePrice: 0,
       gst: 18, stock: 0, minStock: 10, maxStock: 100,
       warehouse: 'WH-A', rack: 'R-01', barcode: '', image: ''
@@ -276,8 +274,12 @@ export class Inventory {
 
   openEditModal(p: Product) {
     this.editingProduct.set(p);
+    // Find the category id by matching label (case-insensitive fallback)
+    const catId = this.categoryService.categories()
+      .find(c => c.label === p.category || c.id === p.category.toLowerCase())?.id
+      ?? p.category.toLowerCase();
     this.form.set({
-      name: p.name, sku: p.sku, category: p.category, subCategory: p.subCategory,
+      name: p.name, sku: p.sku, categoryId: catId, subCategory: p.subCategory,
       brand: p.brand, unit: p.unit, purchasePrice: p.purchasePrice,
       sellingPrice: p.sellingPrice, wholesalePrice: p.wholesalePrice,
       gst: p.gst, stock: p.stock, minStock: p.minStock, maxStock: p.maxStock,
@@ -289,9 +291,10 @@ export class Inventory {
   updateForm(field: string, value: string | number) {
     this.form.update(f => {
       const updated: any = { ...f, [field]: value };
-      // When category changes, reset subCategory to first of new category
-      if (field === 'category') {
-        const firstSub = SUBCATEGORIES.find(s => s.category === value)?.id ?? '';
+      if (field === 'categoryId') {
+        // Auto-select first sub-category for this category
+        const firstSub = this.categoryService.subCategories()
+          .find(s => s.category === (value as string))?.id ?? '';
         updated.subCategory = firstSub;
       }
       return updated;
@@ -301,10 +304,12 @@ export class Inventory {
   saveProduct() {
     const f = this.form();
     if (!f.name || !f.sku) { this.showToast('Name and SKU are required.'); return; }
+    // Resolve category label from id for storage
+    const catLabel = (this.categoryService.categories().find(c => c.id === f.categoryId)?.label ?? f.categoryId) as Category;
     const editing = this.editingProduct();
     if (editing) {
       this.productService.updateProduct(editing.id, {
-        name: f.name, sku: f.sku, category: f.category, subCategory: f.subCategory,
+        name: f.name, sku: f.sku, category: catLabel, subCategory: f.subCategory,
         brand: f.brand, unit: f.unit, purchasePrice: f.purchasePrice,
         sellingPrice: f.sellingPrice, wholesalePrice: f.wholesalePrice,
         gst: f.gst, stock: f.stock, minStock: f.minStock, maxStock: f.maxStock,
@@ -314,7 +319,7 @@ export class Inventory {
       this.showToast(`"${f.name}" updated successfully.`);
     } else {
       this.productService.addProduct({
-        name: f.name, sku: f.sku, category: f.category, subCategory: f.subCategory,
+        name: f.name, sku: f.sku, category: catLabel, subCategory: f.subCategory,
         brand: f.brand, unit: f.unit, purchasePrice: f.purchasePrice,
         sellingPrice: f.sellingPrice, wholesalePrice: f.wholesalePrice,
         gst: f.gst, stock: f.stock, minStock: f.minStock, maxStock: f.maxStock,
@@ -337,22 +342,185 @@ export class Inventory {
     const list = this.products();
     if (list.length === 0) { this.showToast('No products to export.'); return; }
     exportToCsv('inventory_' + new Date().toISOString().slice(0, 10) + '.csv', list as any, [
-      { key: 'sku',           label: 'SKU'            },
-      { key: 'name',          label: 'Product Name'   },
-      { key: 'category',      label: 'Category'       },
-      { key: 'subCategory',   label: 'Sub-Category'   },
-      { key: 'brand',         label: 'Brand'          },
-      { key: 'unit',          label: 'Unit'           },
-      { key: 'purchasePrice', label: 'Purchase Price' },
-      { key: 'sellingPrice',  label: 'Selling Price'  },
-      { key: 'wholesalePrice',label: 'Wholesale Price'},
-      { key: 'gst',           label: 'GST %'          },
-      { key: 'stock',         label: 'Current Stock'  },
-      { key: 'minStock',      label: 'Min Stock'      },
-      { key: 'status',        label: 'Status'         },
+      { key: 'sku',            label: 'SKU'             },
+      { key: 'name',           label: 'Product Name'    },
+      { key: 'category',       label: 'Category'        },
+      { key: 'subCategory',    label: 'Sub-Category'    },
+      { key: 'brand',          label: 'Brand'           },
+      { key: 'unit',           label: 'Unit'            },
+      { key: 'purchasePrice',  label: 'Purchase Price'  },
+      { key: 'sellingPrice',   label: 'Selling Price'   },
+      { key: 'wholesalePrice', label: 'Wholesale Price' },
+      { key: 'gst',            label: 'GST %'           },
+      { key: 'stock',          label: 'Current Stock'   },
+      { key: 'minStock',       label: 'Min Stock'       },
+      { key: 'status',         label: 'Status'          },
     ]);
     this.showToast('Inventory exported as CSV.');
   }
 
-  constructor(private router: Router) {}
+  // ══════════════════════════════════════════════════════════════════════════
+  // Manage Categories Modal
+  // ══════════════════════════════════════════════════════════════════════════
+
+  showManageModal = signal(false);
+  manageTab       = signal<'categories' | 'subcategories'>('categories');
+
+  // Category form
+  editingCategory = signal<ManagedCategory | null>(null);
+  showCatForm     = signal(false);
+  catForm         = signal({ id: '', label: '', icon: 'category', image: '' });
+
+  // Sub-category form
+  editingSubCat   = signal<ManagedSubCategory | null>(null);
+  showSubCatForm  = signal(false);
+  subCatForm      = signal({ id: '', label: '', category: '', icon: 'grid_view', image: '', description: '' });
+
+  // Filter for sub-category tab
+  manageCatFilter = signal('');
+
+  // Drag reorder
+  dragIndex       = signal<number | null>(null);
+  private dragList = signal<'categories' | 'subcategories' | null>(null);
+
+  readonly filteredManageSubCats = computed(() => {
+    const filter = this.manageCatFilter();
+    const subs   = this.categoryService.subCategories();
+    return filter ? subs.filter(s => s.category === filter) : subs;
+  });
+
+  openManageModal() {
+    this.showManageModal.set(true);
+    this.showCatForm.set(false);
+    this.showSubCatForm.set(false);
+  }
+
+  openAddCategory() {
+    this.editingCategory.set(null);
+    this.catForm.set({ id: '', label: '', icon: 'category', image: '' });
+    this.showCatForm.set(true);
+  }
+
+  openEditCategory(cat: ManagedCategory) {
+    this.editingCategory.set(cat);
+    this.catForm.set({ ...cat });
+    this.showCatForm.set(true);
+  }
+
+  saveCategory() {
+    const f = this.catForm();
+    if (!f.label.trim()) { this.showToast('Category label is required.'); return; }
+    const editing = this.editingCategory();
+    if (editing) {
+      this.categoryService.updateCategory(editing.id, {
+        label: f.label.trim(), icon: f.icon, image: f.image
+      });
+      this.showToast(`Category "${f.label}" updated.`);
+    } else {
+      const id = f.label.trim().toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+      this.categoryService.addCategory({
+        id, label: f.label.trim(), icon: f.icon || 'category', image: f.image
+      });
+      this.showToast(`Category "${f.label}" added.`);
+    }
+    this.showCatForm.set(false);
+  }
+
+  deleteCategory(id: string) {
+    const cat = this.categoryService.categories().find(c => c.id === id);
+    if (!cat) return;
+    if (confirm(`Delete category "${cat.label}"? All its sub-categories will also be deleted.`)) {
+      this.categoryService.deleteCategory(id);
+      this.showToast(`Category "${cat.label}" deleted.`);
+    }
+  }
+
+  openAddSubCat() {
+    this.editingSubCat.set(null);
+    const defaultCat = this.categoryService.categories()[0]?.id ?? '';
+    this.subCatForm.set({
+      id: '', label: '', category: defaultCat, icon: 'grid_view', image: '', description: ''
+    });
+    this.showSubCatForm.set(true);
+  }
+
+  openEditSubCat(sub: ManagedSubCategory) {
+    this.editingSubCat.set(sub);
+    this.subCatForm.set({ ...sub, description: sub.description ?? '' });
+    this.showSubCatForm.set(true);
+  }
+
+  saveSubCat() {
+    const f = this.subCatForm();
+    if (!f.label.trim() || !f.category) {
+      this.showToast('Label and category are required.');
+      return;
+    }
+    const editing = this.editingSubCat();
+    if (editing) {
+      this.categoryService.updateSubCategory(editing.id, {
+        label: f.label.trim(), category: f.category,
+        icon: f.icon, image: f.image, description: f.description
+      });
+      this.showToast(`Sub-category "${f.label}" updated.`);
+    } else {
+      const id = f.category + '-' +
+        f.label.trim().toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/(^-|-$)/g, '');
+      this.categoryService.addSubCategory({
+        id, label: f.label.trim(), category: f.category,
+        icon: f.icon || 'grid_view', image: f.image, description: f.description
+      });
+      this.showToast(`Sub-category "${f.label}" added.`);
+    }
+    this.showSubCatForm.set(false);
+  }
+
+  deleteSubCat(id: string) {
+    const sub = this.categoryService.subCategories().find(s => s.id === id);
+    if (!sub) return;
+    if (confirm(`Delete sub-category "${sub.label}"?`)) {
+      this.categoryService.deleteSubCategory(id);
+      this.showToast(`Sub-category "${sub.label}" deleted.`);
+    }
+  }
+
+  onDragStart(index: number) { this.dragIndex.set(index); }
+
+  onDragOver(targetIndex: number, list: 'categories' | 'subcategories') {
+    const from = this.dragIndex();
+    if (from === null || from === targetIndex) return;
+    if (list === 'categories') {
+      this.categoryService.reorderCategories(from, targetIndex);
+    } else {
+      const filter = this.manageCatFilter();
+      this.categoryService.reorderSubCategories(from, targetIndex, filter || null);
+    }
+    this.dragIndex.set(targetIndex);
+  }
+
+  onDragEnd() { this.dragIndex.set(null); }
+
+  constructor() {}
+
+  // ── Cart drawer ───────────────────────────────────────────────────────────
+
+  drawerOpen = signal(false);
+
+  addToOrder(p: Product): void {
+    const sp: SaleProduct = {
+      id: p.id, sku: p.sku, name: p.name, unit: p.unit,
+      sellingPrice: p.sellingPrice, wholesalePrice: p.wholesalePrice,
+      gst: p.gst, stock: p.stock
+    };
+    this.cartService.addToCart(sp);
+  }
+
+  generateBill(): void {
+    this.drawerOpen.set(false);
+    this.router.navigate(['/sales'], { queryParams: { invoice: '1' } });
+  }
 }

@@ -1,98 +1,44 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
-import { SaleProduct, CartItem, PaymentMode, SavedInvoice } from './sales.data';
-import { ProductService } from '../../../core/services/product.service';
+import { Router, ActivatedRoute, RouterModule } from '@angular/router';
+import { CartItem, PaymentMode, SavedInvoice } from './sales.data';
 import { SalesService, InvoiceRecord } from '../../../core/services/sales.service';
 import { AppSettingsService } from '../../../core/services/app-settings.service';
+import { CartService } from '../../../core/services/cart.service';
 import { exportToCsv } from '../../../core/utils/export-csv';
 
 @Component({
   selector: 'app-sales',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './sales.html',
   styleUrls: ['./sales.css', './invoice-print.css'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class Sales {
 
-  private readonly productService = inject(ProductService);
-  private readonly salesService = inject(SalesService);
+  private readonly salesService    = inject(SalesService);
   private readonly settingsService = inject(AppSettingsService);
+  readonly cartService             = inject(CartService);
+  private readonly route           = inject(ActivatedRoute);
 
   // ── Print ─────────────────────────────────────────────────────────────────
   printData = signal<InvoiceRecord | null>(null);
   readonly shopProfile = computed(() => this.settingsService.shop());
 
-  // ── Catalogue & search ───────────────────────────────────────────────────
-  readonly allProducts = computed(() => this.productService.saleProducts());
+  // ── Top-level tab ─────────────────────────────────────────────────────────
+  activeTab = signal<'invoice' | 'history'>('invoice');
+
   readonly recentInvoices = computed(() => this.salesService.invoices());
   readonly today = new Date();
 
-  productSearch = signal('');
-  activeTab = signal<'new' | 'history'>('new');
+  // ══════════════════════════════════════════════════════════════════════════
+  // TOTALS
+  // ══════════════════════════════════════════════════════════════════════════
 
-  readonly filteredProducts = computed(() => {
-    const q = this.productSearch().toLowerCase().trim();
-    const products = this.allProducts();
-    if (!q) return products;
-    return products.filter(p =>
-      p.name.toLowerCase().includes(q) ||
-      p.sku.toLowerCase().includes(q)
-    );
-  });
-
-  // ── Cart ─────────────────────────────────────────────────────────────────
-  cart = signal<CartItem[]>([]);
-
-  addToCart(p: SaleProduct) {
-    const existing = this.cart().find(c => c.product.id === p.id);
-    if (existing) {
-      this.cart.update(items =>
-        items.map(c => c.product.id === p.id
-          ? { ...c, qty: c.qty + 1 }
-          : c
-        )
-      );
-    } else {
-      this.cart.update(items => [...items, {
-        product: p, qty: 1, price: p.sellingPrice, discount: 0
-      }]);
-    }
-  }
-
-  removeFromCart(id: number) {
-    this.cart.update(items => items.filter(c => c.product.id !== id));
-  }
-
-  updateQty(id: number, qty: number) {
-    if (qty < 1) { this.removeFromCart(id); return; }
-    this.cart.update(items =>
-      items.map(c => c.product.id === id ? { ...c, qty } : c)
-    );
-  }
-
-  updatePrice(id: number, price: number) {
-    this.cart.update(items =>
-      items.map(c => c.product.id === id ? { ...c, price: Math.max(0, price) } : c)
-    );
-  }
-
-  updateLineDiscount(id: number, discount: number) {
-    this.cart.update(items =>
-      items.map(c => c.product.id === id
-        ? { ...c, discount: Math.min(100, Math.max(0, discount)) }
-        : c)
-    );
-  }
-
-  clearCart() { this.cart.set([]); }
-
-  // ── Totals ───────────────────────────────────────────────────────────────
   readonly subtotal = computed(() =>
-    this.cart().reduce((sum, c) => {
+    this.cartService.cart().reduce((sum, c) => {
       const lineTotal = c.qty * c.price;
       const lineDisc  = lineTotal * (c.discount / 100);
       return sum + (lineTotal - lineDisc);
@@ -100,7 +46,7 @@ export class Sales {
   );
 
   readonly gstAmount = computed(() =>
-    this.cart().reduce((sum, c) => {
+    this.cartService.cart().reduce((sum, c) => {
       const lineTotal = c.qty * c.price * (1 - c.discount / 100);
       return sum + lineTotal * (c.product.gst / 100);
     }, 0)
@@ -111,11 +57,12 @@ export class Sales {
     return afterExtraDisc + this.gstAmount();
   });
 
-  readonly balance = computed(() =>
-    this.grandTotal() - this.amountPaid()
-  );
+  readonly balance = computed(() => this.grandTotal() - this.amountPaid());
 
-  // ── Billing form ─────────────────────────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════════
+  // BILLING FORM
+  // ══════════════════════════════════════════════════════════════════════════
+
   customerName   = signal('');
   customerPhone  = signal('');
   paymentMode    = signal<PaymentMode>('Cash');
@@ -129,7 +76,6 @@ export class Sales {
 
   setPaymentMode(m: PaymentMode) {
     this.paymentMode.set(m);
-    // Auto-fill paid amount for Cash/UPI
     if (m === 'Cash' || m === 'UPI') {
       this.amountPaid.set(Math.round(this.grandTotal()));
     } else if (m === 'Credit') {
@@ -137,11 +83,12 @@ export class Sales {
     }
   }
 
-  payFull() {
-    this.amountPaid.set(Math.round(this.grandTotal()));
-  }
+  payFull() { this.amountPaid.set(Math.round(this.grandTotal())); }
 
-  // ── Invoice history filter ───────────────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════════
+  // INVOICE HISTORY
+  // ══════════════════════════════════════════════════════════════════════════
+
   historySearch = signal('');
   historyFilter = signal<'all' | 'Paid' | 'Pending' | 'Partial'>('all');
 
@@ -158,15 +105,17 @@ export class Sales {
     return list;
   });
 
-  readonly historyTotalRevenue  = computed(() => this.filteredHistory().reduce((s, i) => s + i.total,  0));
+  readonly historyTotalRevenue   = computed(() => this.filteredHistory().reduce((s, i) => s + i.total,  0));
   readonly historyTotalCollected = computed(() => this.filteredHistory().reduce((s, i) => s + i.paid,   0));
-  readonly historyTotalPending  = computed(() => this.filteredHistory().reduce((s, i) => s + Math.max(0, i.total - i.paid), 0));
+  readonly historyTotalPending   = computed(() => this.filteredHistory().reduce((s, i) => s + Math.max(0, i.total - i.paid), 0));
 
-  // ── Partial payment modal ────────────────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════════
+  // PARTIAL PAYMENT MODAL
+  // ══════════════════════════════════════════════════════════════════════════
+
   showPartialPayModal = signal(false);
   partialPayInvoice   = signal<SavedInvoice | null>(null);
 
-  // ── Invoice detail modal ──────────────────────────────────────────────────
   showDetailModal = signal(false);
   detailInvoice   = signal<InvoiceRecord | null>(null);
 
@@ -174,9 +123,10 @@ export class Sales {
     this.detailInvoice.set(inv);
     this.showDetailModal.set(true);
   }
-  partialPayAmount    = signal(0);
-  partialPayMode      = signal<PaymentMode>('Cash');
-  partialPayRef       = signal('');
+
+  partialPayAmount = signal(0);
+  partialPayMode   = signal<PaymentMode>('Cash');
+  partialPayRef    = signal('');
 
   readonly Math = Math;
 
@@ -193,18 +143,25 @@ export class Sales {
     if (!inv) return;
     const amt = this.partialPayAmount();
     const due = inv.total - inv.paid;
-    if (amt <= 0)   { this.showToast('Enter a valid amount.'); return; }
-    if (amt > due)  { this.showToast(`Amount exceeds balance due (₹${due.toLocaleString('en-IN')}).`); return; }
-
+    if (amt <= 0)  { this.showToast('Enter a valid amount.'); return; }
+    if (amt > due) { this.showToast(`Amount exceeds balance due (₹${due.toLocaleString('en-IN')}).`); return; }
     this.salesService.recordPartialPayment(inv.id, amt, this.partialPayMode());
-
     const label = amt >= due ? 'fully paid' : `partial payment of ₹${amt.toLocaleString('en-IN')} recorded`;
     this.showToast(`${inv.invoice} — ${label} via ${this.partialPayMode()}.`);
     this.showPartialPayModal.set(false);
   }
 
-  // ── Actions ──────────────────────────────────────────────────────────────
-  constructor(private router: Router) {}
+  // ══════════════════════════════════════════════════════════════════════════
+  // ACTIONS
+  // ══════════════════════════════════════════════════════════════════════════
+
+  constructor(private router: Router) {
+    this.route.queryParams.subscribe(params => {
+      if (params['invoice'] === '1') {
+        this.activeTab.set('invoice');
+      }
+    });
+  }
 
   showToast(msg: string) {
     this.toast.set(msg);
@@ -212,7 +169,7 @@ export class Sales {
   }
 
   saveSale() {
-    if (this.cart().length === 0) {
+    if (this.cartService.cart().length === 0) {
       this.showToast('Add at least one product to the cart.');
       return;
     }
@@ -221,7 +178,7 @@ export class Sales {
       return;
     }
 
-    const lineItems = this.cart().map(c => ({
+    const lineItems = this.cartService.cart().map(c => ({
       productId: c.product.id,
       sku: c.product.sku,
       name: c.product.name,
@@ -246,17 +203,18 @@ export class Sales {
     });
 
     this.showToast(`Invoice ${record.invoice} saved! Total ₹${Math.round(record.total).toLocaleString('en-IN')}`);
-    this.cart.set([]);
+    this.cartService.clearCart();
     this.customerName.set('');
     this.customerPhone.set('');
     this.extraDiscount.set(0);
     this.amountPaid.set(0);
     this.notes.set('');
+    this.activeTab.set('history');
   }
 
   printInvoice() {
-    if (this.cart().length === 0) { this.showToast('Cart is empty.'); return; }
-    const lineItems = this.cart().map(c => ({
+    if (this.cartService.cart().length === 0) { this.showToast('Cart is empty.'); return; }
+    const lineItems = this.cartService.cart().map(c => ({
       productId: c.product.id,
       sku: c.product.sku,
       name: c.product.name,
@@ -296,7 +254,6 @@ export class Sales {
     const shop = this.shopProfile();
     const upiId = shop.upiId || '';
 
-    // Build line items HTML
     const itemsHtml = inv.lineItems.map((item, i) => {
       const lineAmt = item.qty * item.price * (1 - item.discount / 100);
       return `<tr>
@@ -309,7 +266,6 @@ export class Sales {
       </tr>`;
     }).join('');
 
-    // QR code for UPI payment (uses a free QR API)
     const qrHtml = upiId ? `
       <div style="text-align:center;margin-top:16px;padding-top:16px;border-top:1px dashed #cbd5e1">
         <p style="margin:0 0 8px;font-size:12px;color:#475569;font-weight:600">Scan to Pay via UPI</p>
@@ -415,12 +371,9 @@ export class Sales {
     ${shop.bankName ? '<p>Bank: ' + shop.bankName + ' | A/C: ' + shop.accountNo + ' | IFSC: ' + shop.ifsc + '</p>' : ''}
     <p style="margin-top:8px;color:#94a3b8">Powered by DHARA — Smart Business Management</p>
   </div>
-
-  <script>/* print triggered by parent */</script>
 </body>
 </html>`;
 
-    // Use a hidden iframe to print without showing a new window
     let iframe = document.getElementById('dh-print-frame') as HTMLIFrameElement;
     if (!iframe) {
       iframe = document.createElement('iframe');
@@ -438,9 +391,7 @@ export class Sales {
       doc.open();
       doc.write(html);
       doc.close();
-      setTimeout(() => {
-        iframe.contentWindow?.print();
-      }, 300);
+      setTimeout(() => { iframe.contentWindow?.print(); }, 300);
     }
   }
 
@@ -465,19 +416,19 @@ export class Sales {
     const invoices = this.filteredHistory();
     if (invoices.length === 0) { this.showToast('No invoices to export.'); return; }
     exportToCsv('sales_' + new Date().toISOString().slice(0, 10) + '.csv', invoices as any, [
-      { key: 'invoice', label: 'Invoice #' },
-      { key: 'date', label: 'Date' },
-      { key: 'time', label: 'Time' },
-      { key: 'customer', label: 'Customer' },
-      { key: 'phone', label: 'Phone' },
-      { key: 'items', label: 'Items Count' },
-      { key: 'subtotal', label: 'Subtotal' },
-      { key: 'gstAmt', label: 'GST' },
-      { key: 'discount', label: 'Discount %' },
-      { key: 'total', label: 'Total' },
-      { key: 'paid', label: 'Paid' },
+      { key: 'invoice',     label: 'Invoice #'    },
+      { key: 'date',        label: 'Date'         },
+      { key: 'time',        label: 'Time'         },
+      { key: 'customer',    label: 'Customer'     },
+      { key: 'phone',       label: 'Phone'        },
+      { key: 'items',       label: 'Items Count'  },
+      { key: 'subtotal',    label: 'Subtotal'     },
+      { key: 'gstAmt',      label: 'GST'          },
+      { key: 'discount',    label: 'Discount %'   },
+      { key: 'total',       label: 'Total'        },
+      { key: 'paid',        label: 'Paid'         },
       { key: 'paymentMode', label: 'Payment Mode' },
-      { key: 'status', label: 'Status' },
+      { key: 'status',      label: 'Status'       },
     ]);
     this.showToast('Sales history exported as CSV.');
   }

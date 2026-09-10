@@ -1,4 +1,4 @@
-<div class="suppliers">
+﻿<div class="suppliers" [class.mobile-view-detail]="mobileView() === 'detail'">
 
   <!-- PAGE HEADER -->
   <div class="page-header">
@@ -17,7 +17,7 @@
   </div>
 
   <!-- KPI STATS -->
-  <div class="stats-row">
+  <div class="stats-row" [class.mobile-hide-on-detail]="mobileView() === 'detail'">
     @for(s of stats(); track s.label) {
       <div class="stat-card">
         <div class="stat-card__icon" [style.background]="s.color + '18'">
@@ -35,7 +35,7 @@
   <div class="sup-layout">
 
     <!-- LEFT: Supplier List -->
-    <div class="list-panel">
+    <div class="list-panel" [class.mobile-hidden]="mobileView() === 'detail'">
 
       <!-- Search + Filters -->
       <div class="list-toolbar">
@@ -99,7 +99,13 @@
 
     <!-- RIGHT: Supplier Detail -->
     @if(selected(); as s) {
-    <div class="detail-panel">
+    <div class="detail-panel" [class.mobile-hidden]="mobileView() === 'list'">
+
+      <!-- Mobile back button -->
+      <button class="mobile-back-btn" (click)="mobileView.set('list')">
+        <span class="material-symbols-outlined">arrow_back</span>
+        All Suppliers
+      </button>
 
       <!-- Profile card -->
       <div class="profile-card">

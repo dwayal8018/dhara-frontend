@@ -1,12 +1,16 @@
-<div class="inventory">
+﻿<div class="inventory">
 
   <!-- PAGE HEADER -->
   <div class="page-header">
     <div class="page-header__left">
       <h1 class="page-title">Inventory</h1>
-      <p class="page-subtitle">Browse categories, sub-categories and products</p>
+      <p class="page-subtitle">Browse by category, sub-category and product</p>
     </div>
     <div class="page-header__right">
+      <button class="btn btn--ghost" (click)="openManageModal()">
+        <span class="material-symbols-outlined">tune</span>
+        <span class="btn-label">Manage</span>
+      </button>
       <button class="btn btn--outline" (click)="exportInventory()">
         <span class="material-symbols-outlined">download</span>
         <span class="btn-label">Export</span>
@@ -18,7 +22,7 @@
     </div>
   </div>
 
-  <!-- KPI STATS -->
+  <!-- KPI STATS (always visible) -->
   <div class="inv-stats">
     @for(s of stats(); track s.label) {
     <div class="inv-stat">
@@ -33,268 +37,387 @@
     }
   </div>
 
-  <!-- MAIN BODY -->
-  <div class="inv-body">
-
-    <!-- CATEGORY SIDEBAR -->
-    <aside class="cat-panel">
-      <div class="cat-panel__title">Categories</div>
-
-      <button class="cat-item" [class.cat-item--active]="selectedCategory() === 'all'"
-        (click)="setCategory('all')">
-        <span class="material-symbols-outlined">apps</span>
-        <span>All Products</span>
-        <span class="cat-count">{{ dynamicCategories()[0].count }}</span>
+  <!-- BREADCRUMB — shown when not on home category view -->
+  @if(navLevel() !== 'categories') {
+  <div class="breadcrumb-nav">
+    <button class="bc-item" (click)="goToAll()">
+      <span class="material-symbols-outlined">home</span> Categories
+    </button>
+    @if(navLevel() === 'subcategories' || navLevel() === 'products') {
+      <span class="bc-sep">›</span>
+      <button class="bc-item"
+        [class.bc-active]="navLevel() === 'subcategories'"
+        (click)="navLevel() === 'products' && selectedSubCategory() ? goBackToSubCategories() : null">
+        {{ selectedCategoryLabel() }}
       </button>
+    }
+    @if(selectedSubCategory()) {
+      <span class="bc-sep">›</span>
+      <span class="bc-item bc-active">{{ selectedSubCategoryObj()?.label }}</span>
+    }
+  </div>
+  }
 
+  <!-- MAIN CONTENT — full width, no internal sidebar column -->
+  <div class="inv-content">
+
+    <!-- ══════════════════════════════════════
+         LEVEL 1: CATEGORY CARDS (default view)
+    ══════════════════════════════════════ -->
+    @if(navLevel() === 'categories') {
+    <div class="level-header">
+      <h2 class="level-title">
+        <span class="material-symbols-outlined">category</span>
+        Product Categories
+      </h2>
+      <p class="level-subtitle">Tap a category to browse sub-categories and products</p>
+    </div>
+
+    <div class="cat-card-grid">
       @for(cat of dynamicCategories().slice(1); track cat.id) {
-      <button class="cat-item" [class.cat-item--active]="selectedCategory() === cat.id"
-        (click)="setCategory(cat.id)">
-        <span class="material-symbols-outlined">{{ cat.icon }}</span>
-        <span>{{ cat.label }}</span>
-        <span class="cat-count">{{ cat.count }}</span>
+      <button class="cat-card" (click)="setCategory(cat.id)">
+        <div class="cat-card__img-wrap">
+          <img [src]="cat.image" [alt]="cat.label" class="cat-card__img"
+            (error)="onImgError($event)" loading="lazy">
+          <div class="cat-card__img-fallback">
+            <span class="material-symbols-outlined">{{ cat.icon }}</span>
+          </div>
+        </div>
+        <div class="cat-card__body">
+          <div class="cat-card__name">{{ cat.label }}</div>
+          <div class="cat-card__count">{{ cat.count }} items</div>
+        </div>
       </button>
       }
-    </aside>
 
-    <!-- PRODUCT PANEL -->
-    <div class="prod-panel">
+      <!-- All Products shortcut -->
+      <button class="cat-card cat-card--all" (click)="setCategory('all')">
+        <div class="cat-card__img-wrap">
+          <div class="cat-card__img-fallback cat-card__img-fallback--all">
+            <span class="material-symbols-outlined">inventory_2</span>
+          </div>
+        </div>
+        <div class="cat-card__body">
+          <div class="cat-card__name">All Products</div>
+          <div class="cat-card__count">{{ dynamicCategories()[0].count }} items</div>
+        </div>
+      </button>
+    </div>
+    }
 
-      <!-- BREADCRUMB -->
-      <div class="breadcrumb-nav">
-        <button class="bc-item" (click)="goToAll()">
-          <span class="material-symbols-outlined">apps</span> All
-        </button>
-        @if(selectedCategory() !== 'all') {
-          <span class="bc-sep">›</span>
-          <button class="bc-item" [class.bc-active]="navLevel() === 'subcategories'"
-            (click)="navLevel() === 'products' && selectedSubCategory() ? goBackToSubCategories() : null">
-            {{ selectedCategoryLabel() }}
+    <!-- ══════════════════════════════════════
+         LEVEL 2: SUB-CATEGORY CARDS
+    ══════════════════════════════════════ -->
+    @if(navLevel() === 'subcategories') {
+    <div class="level-header">
+      <h2 class="level-title">
+        <span class="material-symbols-outlined">{{ dynamicCategories().find(c => c.id === selectedCategory())?.icon }}</span>
+        {{ selectedCategoryLabel() }}
+      </h2>
+      <p class="level-subtitle">Tap a sub-category to see products</p>
+    </div>
+
+    <div class="sub-cat-grid">
+      @for(sub of currentSubCategories(); track sub.id) {
+      <button class="sub-cat-card" (click)="selectSubCategory(sub.id)">
+        <div class="sub-cat-card__img-wrap">
+          <img [src]="sub.image" [alt]="sub.label" class="sub-cat-card__img"
+            (error)="onImgError($event)" loading="eager">
+          <div class="sub-cat-card__icon-fallback">
+            <span class="material-symbols-outlined">{{ sub.icon }}</span>
+          </div>
+        </div>
+        <div class="sub-cat-card__body">
+          <div class="sub-cat-card__name">{{ sub.label }}</div>
+          @if(sub.description) {
+            <div class="sub-cat-card__desc">{{ sub.description }}</div>
+          }
+        </div>
+      </button>
+      }
+    </div>
+    }
+
+    <!-- ══════════════════════════════════════
+         LEVEL 3: PRODUCT CARDS / TABLE
+    ══════════════════════════════════════ -->
+    @if(navLevel() === 'products') {
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="toolbar__search">
+        <span class="material-symbols-outlined">search</span>
+        <input type="text" placeholder="Search products..."
+          [value]="searchQuery()"
+          (input)="searchQuery.set($any($event.target).value)">
+        @if(searchQuery()) {
+          <button class="cat-search__clear" (click)="searchQuery.set('')">
+            <span class="material-symbols-outlined">close</span>
           </button>
-        }
-        @if(selectedSubCategory()) {
-          <span class="bc-sep">›</span>
-          <span class="bc-item bc-active">{{ selectedSubCategoryObj()?.label }}</span>
         }
       </div>
-
-      <!-- ══ SUB-CATEGORY CARDS (category selected, no sub selected yet) ══ -->
-      @if(navLevel() === 'subcategories') {
-
-        <div class="sub-grid-header">
-          <h2 class="sub-grid-title">
-            <span class="material-symbols-outlined">{{ dynamicCategories().find(c => c.id === selectedCategory())?.icon }}</span>
-            {{ selectedCategoryLabel() }}
-          </h2>
-          <p class="sub-grid-subtitle">Select a sub-category to browse products</p>
-        </div>
-
-        <div class="sub-cat-grid">
-          @for(sub of currentSubCategories(); track sub.id) {
-          <button class="sub-cat-card" (click)="selectSubCategory(sub.id)">
-            <div class="sub-cat-card__img-wrap">
-              <img [src]="sub.image" [alt]="sub.label"
-                class="sub-cat-card__img"
-                (error)="onImgError($event)">
-              <div class="sub-cat-card__icon-fallback">
-                <span class="material-symbols-outlined">{{ sub.icon }}</span>
-              </div>
-            </div>
-            <div class="sub-cat-card__body">
-              <div class="sub-cat-card__name">{{ sub.label }}</div>
-              @if(sub.description) {
-                <div class="sub-cat-card__desc">{{ sub.description }}</div>
-              }
-            </div>
+      <div class="toolbar__filters">
+        <select (change)="selectedStatus.set($any($event.target).value)">
+          <option value="all">All Status</option>
+          <option value="In Stock">In Stock</option>
+          <option value="Low Stock">Low Stock</option>
+          <option value="Out of Stock">Out of Stock</option>
+        </select>
+        <div class="view-toggle">
+          <button [class.active]="viewMode() === 'grid'"  (click)="setView('grid')"  title="Card view">
+            <span class="material-symbols-outlined">grid_view</span>
           </button>
-          }
+          <button [class.active]="viewMode() === 'table'" (click)="setView('table')" title="Table view">
+            <span class="material-symbols-outlined">table_rows</span>
+          </button>
         </div>
-      }
-
-      <!-- ══ PRODUCT CARDS / TABLE (sub-category selected OR all products) ══ -->
-      @if(navLevel() === 'products') {
-
-        <!-- TOOLBAR -->
-        <div class="toolbar">
-          <div class="toolbar__search">
-            <span class="material-symbols-outlined">search</span>
-            <input type="text" placeholder="Search products..."
-              [value]="searchQuery()"
-              (input)="searchQuery.set($any($event.target).value)">
-            @if(searchQuery()) {
-              <button class="cat-search__clear" (click)="searchQuery.set('')">
-                <span class="material-symbols-outlined">close</span>
-              </button>
-            }
-          </div>
-          <div class="toolbar__filters">
-            <select (change)="selectedStatus.set($any($event.target).value)">
-              <option value="all">All Status</option>
-              <option value="In Stock">In Stock</option>
-              <option value="Low Stock">Low Stock</option>
-              <option value="Out of Stock">Out of Stock</option>
-            </select>
-            <div class="view-toggle">
-              <button [class.active]="viewMode() === 'grid'"  (click)="setView('grid')"  title="Card view">
-                <span class="material-symbols-outlined">grid_view</span>
-              </button>
-              <button [class.active]="viewMode() === 'table'" (click)="setView('table')" title="Table view">
-                <span class="material-symbols-outlined">table_rows</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- RESULTS COUNT + SORT -->
-        <div class="results-bar">
-          <span>{{ products().length }} products</span>
-          <div class="sort-pills">
-            @for(opt of sortOptions; track opt.key) {
-              <button class="sort-pill" [class.active]="isSorted(opt.key)" (click)="setSort(opt.key)">
-                {{ opt.label }}
-                @if(isSorted(opt.key)) {
-                  <span class="material-symbols-outlined sort-arrow">{{ sortIcon(opt.key) }}</span>
-                }
-              </button>
-            }
-          </div>
-        </div>
-
-        <!-- ── CARD VIEW (default, image-first) ── -->
-        @if(viewMode() === 'grid') {
-        <div class="prod-grid">
-          @for(p of products(); track p.id) {
-          <div class="prod-card">
-
-            <!-- Image -->
-            <div class="prod-card__img-wrap">
-              @if(p.image) {
-                <img [src]="p.image" [alt]="p.name" class="prod-card__img"
-                  (error)="onImgError($event)" loading="lazy">
-              }
-              <div class="prod-card__img-fallback">
-                <span class="material-symbols-outlined">inventory_2</span>
-              </div>
-              <!-- Stock badge overlaid on image -->
-              <span class="prod-card__stock-badge" [class]="statusClass(p.status)">
-                {{ p.stock }} left
-              </span>
-            </div>
-
-            <!-- Info -->
-            <div class="prod-card__body">
-              <div class="prod-card__name">{{ p.name }}</div>
-              <div class="prod-card__brand">{{ p.brand }} · {{ p.unit }}</div>
-              <div class="prod-card__price">₹{{ p.sellingPrice | number }}</div>
-              <div class="prod-card__purchase">Cost: ₹{{ p.purchasePrice | number }}</div>
-            </div>
-
-            <!-- Actions -->
-            <div class="prod-card__actions">
-              <button class="icon-btn" (click)="openEditModal(p)" title="Edit">
-                <span class="material-symbols-outlined">edit</span>
-              </button>
-              <button class="icon-btn danger" (click)="deleteProduct(p)" title="Delete">
-                <span class="material-symbols-outlined">delete_outline</span>
-              </button>
-            </div>
-
-          </div>
-          } @empty {
-          <div class="empty-state-block">
-            <span class="material-symbols-outlined">inventory_2</span>
-            <p>No products found.</p>
-            <button class="btn btn--primary" (click)="openAddModal()">
-              <span class="material-symbols-outlined">add</span> Add Product
-            </button>
-          </div>
-          }
-        </div>
-        }
-
-        <!-- ── TABLE VIEW ── -->
-        @if(viewMode() === 'table') {
-        <div class="table-wrap">
-          <table class="responsive-table">
-            <thead>
-              <tr>
-                <th></th>
-                <th>Product</th>
-                <th>Sub-Category</th>
-                <th>Brand</th>
-                <th>Stock</th>
-                <th>Selling ₹</th>
-                <th>Purchase ₹</th>
-                <th>Margin</th>
-                <th>Status</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              @for(p of products(); track p.id) {
-              <tr>
-                <td class="no-label img-cell">
-                  @if(p.image) {
-                    <img [src]="p.image" [alt]="p.name" class="table-img" (error)="onImgError($event)" loading="lazy">
-                  } @else {
-                    <span class="material-symbols-outlined table-img-fallback">inventory_2</span>
-                  }
-                </td>
-                <td data-label="Product">
-                  <div class="prod-name">{{ p.name }}</div>
-                  <div class="prod-unit muted">{{ p.sku }} · {{ p.unit }}</div>
-                </td>
-                <td data-label="Sub-Category" class="muted">{{ p.subCategory }}</td>
-                <td data-label="Brand" class="muted">{{ p.brand }}</td>
-                <td data-label="Stock">
-                  <span class="stock-num" [class.low]="p.stock <= p.minStock">{{ p.stock }}</span>
-                  <span class="stock-min muted"> / {{ p.minStock }}</span>
-                </td>
-                <td data-label="Selling" class="amount primary">₹{{ p.sellingPrice | number }}</td>
-                <td data-label="Purchase" class="amount">₹{{ p.purchasePrice | number }}</td>
-                <td data-label="Margin">
-                  <span class="margin-badge" [class.good]="margin(p) >= 20" [class.low]="margin(p) < 15">
-                    {{ margin(p) }}%
-                  </span>
-                </td>
-                <td data-label="Status">
-                  <span class="badge" [class]="statusClass(p.status)">{{ p.status }}</span>
-                </td>
-                <td data-label="Actions" class="actions-cell">
-                  <div class="row-actions">
-                    <button class="icon-btn" (click)="openEditModal(p)" title="Edit">
-                      <span class="material-symbols-outlined">edit</span>
-                    </button>
-                    <button class="icon-btn danger" (click)="deleteProduct(p)" title="Delete">
-                      <span class="material-symbols-outlined">delete</span>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-              }
-              @empty {
-              <tr>
-                <td colspan="10" class="no-label" style="text-align:center;padding:32px;color:#94a3b8;font-style:italic">
-                  No products found.
-                </td>
-              </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-        }
-
-      }
-      <!-- end navLevel === products -->
-
+      </div>
     </div>
-    <!-- end prod-panel -->
+
+    <!-- Results + sort -->
+    <div class="results-bar">
+      <span>{{ products().length }} products</span>
+      <div class="sort-pills">
+        @for(opt of sortOptions; track opt.key) {
+          <button class="sort-pill" [class.active]="isSorted(opt.key)" (click)="setSort(opt.key)">
+            {{ opt.label }}
+            @if(isSorted(opt.key)) {
+              <span class="material-symbols-outlined sort-arrow">{{ sortIcon(opt.key) }}</span>
+            }
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- CARD VIEW (default, image-first) -->
+    @if(viewMode() === 'grid') {
+    <div class="prod-grid">
+      @for(p of products(); track p.id) {
+      <div class="prod-card">
+        <div class="prod-card__img-wrap">
+          @if(p.image) {
+            <img [src]="p.image" [alt]="p.name" class="prod-card__img"
+              (error)="onImgError($event)" loading="lazy">
+          }
+          <div class="prod-card__img-fallback">
+            <span class="material-symbols-outlined">inventory_2</span>
+          </div>
+          <span class="prod-card__stock-badge" [class]="statusClass(p.status)">
+            {{ p.stock }} left
+          </span>
+        </div>
+        <div class="prod-card__body">
+          <div class="prod-card__name">{{ p.name }}</div>
+          <div class="prod-card__brand">{{ p.brand }} · {{ p.unit }}</div>
+          <div class="prod-card__price">₹{{ p.sellingPrice | number }}</div>
+          <div class="prod-card__purchase">Cost: ₹{{ p.purchasePrice | number }}</div>
+        </div>
+        <div class="prod-card__actions">
+          <button class="icon-btn add-to-order-btn"
+            (click)="addToOrder(p); $event.stopPropagation()"
+            title="Add to Order"
+            [class.added]="cartService.cart().some(c => c.product.id === p.id)">
+            <span class="material-symbols-outlined">
+              {{ cartService.cart().some(c => c.product.id === p.id) ? 'shopping_cart' : 'add_shopping_cart' }}
+            </span>
+          </button>
+          <button class="icon-btn" (click)="openEditModal(p)" title="Edit">
+            <span class="material-symbols-outlined">edit</span>
+          </button>
+          <button class="icon-btn danger" (click)="deleteProduct(p)" title="Delete">
+            <span class="material-symbols-outlined">delete_outline</span>
+          </button>
+        </div>
+      </div>
+      } @empty {
+      <div class="empty-state-block">
+        <span class="material-symbols-outlined">inventory_2</span>
+        <p>No products found.</p>
+        <button class="btn btn--primary" (click)="openAddModal()">
+          <span class="material-symbols-outlined">add</span> Add Product
+        </button>
+      </div>
+      }
+    </div>
+    }
+
+    <!-- TABLE VIEW -->
+    @if(viewMode() === 'table') {
+    <div class="table-wrap">
+      <table class="responsive-table">
+        <thead>
+          <tr>
+            <th></th>
+            <th>Product</th>
+            <th>Brand</th>
+            <th>Stock</th>
+            <th>Selling ₹</th>
+            <th>Purchase ₹</th>
+            <th>Margin</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for(p of products(); track p.id) {
+          <tr>
+            <td class="no-label img-cell">
+              @if(p.image) {
+                <img [src]="p.image" [alt]="p.name" class="table-img"
+                  (error)="onImgError($event)" loading="lazy">
+              } @else {
+                <span class="material-symbols-outlined table-img-fallback">inventory_2</span>
+              }
+            </td>
+            <td data-label="Product">
+              <div class="prod-name">{{ p.name }}</div>
+              <div class="prod-unit muted">{{ p.sku }} · {{ p.unit }}</div>
+            </td>
+            <td data-label="Brand" class="muted">{{ p.brand }}</td>
+            <td data-label="Stock">
+              <span class="stock-num" [class.low]="p.stock <= p.minStock">{{ p.stock }}</span>
+              <span class="stock-min muted"> / {{ p.minStock }}</span>
+            </td>
+            <td data-label="Selling" class="amount primary">₹{{ p.sellingPrice | number }}</td>
+            <td data-label="Purchase" class="amount">₹{{ p.purchasePrice | number }}</td>
+            <td data-label="Margin">
+              <span class="margin-badge" [class.good]="margin(p) >= 20" [class.low]="margin(p) < 15">
+                {{ margin(p) }}%
+              </span>
+            </td>
+            <td data-label="Status">
+              <span class="badge" [class]="statusClass(p.status)">{{ p.status }}</span>
+            </td>
+            <td data-label="Actions" class="actions-cell">
+              <div class="row-actions">
+                <button class="icon-btn add-to-order-btn"
+                  (click)="addToOrder(p)"
+                  title="Add to Order"
+                  [class.added]="cartService.cart().some(c => c.product.id === p.id)">
+                  <span class="material-symbols-outlined">
+                    {{ cartService.cart().some(c => c.product.id === p.id) ? 'shopping_cart' : 'add_shopping_cart' }}
+                  </span>
+                </button>
+                <button class="icon-btn" (click)="openEditModal(p)" title="Edit">
+                  <span class="material-symbols-outlined">edit</span>
+                </button>
+                <button class="icon-btn danger" (click)="deleteProduct(p)" title="Delete">
+                  <span class="material-symbols-outlined">delete</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+          }
+          @empty {
+          <tr>
+            <td colspan="9" class="no-label"
+              style="text-align:center;padding:32px;color:#94a3b8;font-style:italic">
+              No products found.
+            </td>
+          </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    }
+
+    }
+    <!-- end navLevel === products -->
 
   </div>
-  <!-- end inv-body -->
+  <!-- end inv-content -->
 
   @if(toast()) {
     <div class="toast">{{ toast() }}</div>
+  }
+
+  <!-- ══ CART DRAWER TOGGLE BUTTON (desktop, shows when cart has items) ════ -->
+  @if(cartService.cartCount() > 0 && !drawerOpen()) {
+    <button class="cart-fab" (click)="drawerOpen.set(true)">
+      <span class="material-symbols-outlined">shopping_cart</span>
+      <span class="cart-fab__badge">{{ cartService.cartCount() }}</span>
+    </button>
+  }
+
+  <!-- ══ CART DRAWER OVERLAY ═══════════════════════════════════════════════ -->
+  @if(drawerOpen()) {
+    <div class="drawer-backdrop" (click)="drawerOpen.set(false)"></div>
+    <div class="cart-drawer">
+
+      <div class="cart-drawer__header">
+        <div class="cart-drawer__title">
+          <span class="material-symbols-outlined">shopping_cart</span>
+          Order List
+          <span class="cart-drawer__count">{{ cartService.cartCount() }}</span>
+        </div>
+        <button class="cart-drawer__close" (click)="drawerOpen.set(false)">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <div class="cart-drawer__body">
+        @if(cartService.cart().length === 0) {
+          <div class="cart-drawer__empty">
+            <span class="material-symbols-outlined">remove_shopping_cart</span>
+            <p>No items yet</p>
+          </div>
+        }
+        @for(item of cartService.cart(); track item.product.id) {
+          <div class="cart-drawer__item">
+            <div class="cart-drawer__item-info">
+              <div class="cart-drawer__item-name">{{ item.product.name }}</div>
+              <div class="cart-drawer__item-meta">{{ item.product.sku }} · ₹{{ item.price | number }}</div>
+            </div>
+            <div class="cart-drawer__item-controls">
+              <div class="cart-qty-stepper">
+                <button (click)="cartService.updateQty(item.product.id, item.qty - 1)">
+                  <span class="material-symbols-outlined">remove</span>
+                </button>
+                <span>{{ item.qty }}</span>
+                <button (click)="cartService.updateQty(item.product.id, item.qty + 1)">
+                  <span class="material-symbols-outlined">add</span>
+                </button>
+              </div>
+              <div class="cart-drawer__item-total">₹{{ (item.qty * item.price) | number:'1.0-0' }}</div>
+              <button class="cart-drawer__item-remove" (click)="cartService.removeFromCart(item.product.id)">
+                <span class="material-symbols-outlined">delete_outline</span>
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+
+      <div class="cart-drawer__footer">
+        <div class="cart-drawer__subtotal">
+          <span>Subtotal</span>
+          <span class="cart-drawer__subtotal-value">₹{{ cartService.subtotal() | number:'1.0-0' }}</span>
+        </div>
+        <div class="cart-drawer__actions">
+          <button class="btn btn--ghost btn--sm" (click)="cartService.clearCart()">
+            <span class="material-symbols-outlined">delete_sweep</span> Clear
+          </button>
+          <button class="btn btn--primary" (click)="generateBill()">
+            <span class="material-symbols-outlined">receipt_long</span>
+            Generate Bill
+          </button>
+        </div>
+      </div>
+
+    </div>
+  }
+
+  <!-- ══ MOBILE STICKY ORDER BAR (shown when cart has items, drawer closed) ═ -->
+  @if(cartService.cartCount() > 0 && !drawerOpen()) {
+    <div class="mobile-order-bar" (click)="drawerOpen.set(true)">
+      <span class="mobile-order-bar__info">
+        <span class="material-symbols-outlined">shopping_cart</span>
+        {{ cartService.cartCount() }} item{{ cartService.cartCount() > 1 ? 's' : '' }}
+      </span>
+      <span class="mobile-order-bar__total">₹{{ cartService.subtotal() | number:'1.0-0' }}</span>
+      <span class="mobile-order-bar__cta">
+        View Order <span class="material-symbols-outlined">arrow_forward</span>
+      </span>
+    </div>
   }
 
 </div>
@@ -336,16 +459,11 @@
       <div class="form-row">
         <div class="form-group">
           <label>Category</label>
-          <select [value]="form().category"
-            (change)="updateForm('category', $any($event.target).value)">
-            <option>Plumbing</option>
-            <option>Electrical</option>
-            <option>Hardware</option>
-            <option>Agriculture</option>
-            <option>Paint</option>
-            <option>Steel</option>
-            <option>Sanitary</option>
-            <option>Building</option>
+          <select [value]="form().categoryId"
+            (change)="updateForm('categoryId', $any($event.target).value)">
+            @for(cat of categoryService.categories(); track cat.id) {
+              <option [value]="cat.id">{{ cat.label }}</option>
+            }
           </select>
         </div>
         <div class="form-group form-group--lg">
@@ -384,13 +502,17 @@
         </div>
       </div>
 
-      <!-- Row 4: Image URL -->
+      <!-- Row 4: Image -->
       <div class="form-row">
         <div class="form-group form-group--full">
-          <label>Product Image URL (optional)</label>
-          <input type="text" placeholder="https://..."
+          <label>Product Image</label>
+          <input type="text"
+            placeholder="URL (https://...) or local path (assets/inventory/products/my-image.jpg)"
             [value]="form().image"
             (input)="updateForm('image', $any($event.target).value)">
+          <small style="color:#64748b;margin-top:4px;display:block">
+            Drop any size image in <code>src/assets/inventory/products/</code> — it will auto-fit the card
+          </small>
         </div>
       </div>
 
@@ -481,6 +603,213 @@
       </button>
     </div>
 
+  </div>
+</div>
+}
+
+<!-- ══ MANAGE CATEGORIES MODAL ════════════════════════════════════════════════ -->
+@if(showManageModal()) {
+<div class="modal-backdrop" (click)="showManageModal.set(false)">
+  <div class="modal modal--manage" (click)="$event.stopPropagation()">
+
+    <div class="modal__header">
+      <h2 class="modal__title">
+        <span class="material-symbols-outlined">tune</span>
+        Manage Categories
+      </h2>
+      <button class="modal__close" (click)="showManageModal.set(false)">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+
+    <!-- Tabs -->
+    <div class="manage-tabs">
+      <button class="manage-tab" [class.active]="manageTab() === 'categories'" (click)="manageTab.set('categories')">
+        <span class="material-symbols-outlined">category</span> Categories
+      </button>
+      <button class="manage-tab" [class.active]="manageTab() === 'subcategories'" (click)="manageTab.set('subcategories')">
+        <span class="material-symbols-outlined">grid_view</span> Sub-Categories
+      </button>
+    </div>
+
+    <div class="modal__body manage-body">
+
+      <!-- ── CATEGORIES TAB ── -->
+      @if(manageTab() === 'categories') {
+        <div class="manage-list">
+          @for(cat of categoryService.categories(); track cat.id; let i = $index) {
+            <div class="manage-item"
+              draggable="true"
+              (dragstart)="onDragStart(i)"
+              (dragover)="$event.preventDefault(); onDragOver(i, 'categories')"
+              (dragend)="onDragEnd()"
+              [class.dragging]="dragIndex() === i">
+              <span class="manage-item__drag material-symbols-outlined">drag_indicator</span>
+              <div class="manage-item__img-wrap">
+                @if(cat.image) {
+                  <img [src]="cat.image" [alt]="cat.label" (error)="onImgError($event)">
+                } @else {
+                  <span class="material-symbols-outlined">{{ cat.icon }}</span>
+                }
+              </div>
+              <div class="manage-item__info">
+                <div class="manage-item__label">{{ cat.label }}</div>
+                <div class="manage-item__id">{{ cat.id }}</div>
+              </div>
+              <div class="manage-item__actions">
+                <button class="icon-btn" (click)="openEditCategory(cat)" title="Edit">
+                  <span class="material-symbols-outlined">edit</span>
+                </button>
+                <button class="icon-btn danger" (click)="deleteCategory(cat.id)" title="Delete">
+                  <span class="material-symbols-outlined">delete_outline</span>
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Category add/edit form -->
+        @if(showCatForm()) {
+          <div class="manage-form">
+            <div class="manage-form__title">{{ editingCategory() ? 'Edit Category' : 'Add Category' }}</div>
+            <div class="form-row">
+              <div class="form-group form-group--lg">
+                <label>Label <span class="req">*</span></label>
+                <input type="text" placeholder="e.g. Furniture"
+                  [value]="catForm().label"
+                  (input)="catForm.update(f => ({...f, label: $any($event.target).value}))">
+              </div>
+              <div class="form-group">
+                <label>Icon (Material Symbol)</label>
+                <input type="text" placeholder="e.g. chair"
+                  [value]="catForm().icon"
+                  (input)="catForm.update(f => ({...f, icon: $any($event.target).value}))">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group form-group--full">
+                <label>Image URL</label>
+                <input type="text" placeholder="https://... or assets/inventory/categories/name.jpg"
+                  [value]="catForm().image"
+                  (input)="catForm.update(f => ({...f, image: $any($event.target).value}))">
+              </div>
+            </div>
+            <div class="manage-form__actions">
+              <button class="btn btn--outline" (click)="showCatForm.set(false)">Cancel</button>
+              <button class="btn btn--primary" (click)="saveCategory()">
+                <span class="material-symbols-outlined">save</span>
+                {{ editingCategory() ? 'Save Changes' : 'Add Category' }}
+              </button>
+            </div>
+          </div>
+        } @else {
+          <button class="btn btn--primary manage-add-btn" (click)="openAddCategory()">
+            <span class="material-symbols-outlined">add</span> Add Category
+          </button>
+        }
+      }
+
+      <!-- ── SUB-CATEGORIES TAB ── -->
+      @if(manageTab() === 'subcategories') {
+        <div class="manage-filter-row">
+          <label>Filter by Category</label>
+          <select [value]="manageCatFilter()" (change)="manageCatFilter.set($any($event.target).value)">
+            <option value="">All Categories</option>
+            @for(cat of categoryService.categories(); track cat.id) {
+              <option [value]="cat.id">{{ cat.label }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="manage-list">
+          @for(sub of filteredManageSubCats(); track sub.id; let i = $index) {
+            <div class="manage-item"
+              draggable="true"
+              (dragstart)="onDragStart(i)"
+              (dragover)="$event.preventDefault(); onDragOver(i, 'subcategories')"
+              (dragend)="onDragEnd()">
+              <span class="manage-item__drag material-symbols-outlined">drag_indicator</span>
+              <div class="manage-item__img-wrap">
+                @if(sub.image) {
+                  <img [src]="sub.image" [alt]="sub.label" (error)="onImgError($event)">
+                } @else {
+                  <span class="material-symbols-outlined">{{ sub.icon }}</span>
+                }
+              </div>
+              <div class="manage-item__info">
+                <div class="manage-item__label">{{ sub.label }}</div>
+                <div class="manage-item__id">{{ sub.category }} › {{ sub.id }}</div>
+              </div>
+              <div class="manage-item__actions">
+                <button class="icon-btn" (click)="openEditSubCat(sub)" title="Edit">
+                  <span class="material-symbols-outlined">edit</span>
+                </button>
+                <button class="icon-btn danger" (click)="deleteSubCat(sub.id)" title="Delete">
+                  <span class="material-symbols-outlined">delete_outline</span>
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+
+        @if(showSubCatForm()) {
+          <div class="manage-form">
+            <div class="manage-form__title">{{ editingSubCat() ? 'Edit Sub-Category' : 'Add Sub-Category' }}</div>
+            <div class="form-row">
+              <div class="form-group form-group--lg">
+                <label>Label <span class="req">*</span></label>
+                <input type="text" placeholder="e.g. Pipes"
+                  [value]="subCatForm().label"
+                  (input)="subCatForm.update(f => ({...f, label: $any($event.target).value}))">
+              </div>
+              <div class="form-group">
+                <label>Category <span class="req">*</span></label>
+                <select [value]="subCatForm().category"
+                  (change)="subCatForm.update(f => ({...f, category: $any($event.target).value}))">
+                  @for(cat of categoryService.categories(); track cat.id) {
+                    <option [value]="cat.id">{{ cat.label }}</option>
+                  }
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Icon (Material Symbol)</label>
+                <input type="text" placeholder="e.g. water_drop"
+                  [value]="subCatForm().icon"
+                  (input)="subCatForm.update(f => ({...f, icon: $any($event.target).value}))">
+              </div>
+              <div class="form-group form-group--lg">
+                <label>Description</label>
+                <input type="text" placeholder="Short description"
+                  [value]="subCatForm().description"
+                  (input)="subCatForm.update(f => ({...f, description: $any($event.target).value}))">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group form-group--full">
+                <label>Image URL</label>
+                <input type="text" placeholder="https://... or assets/inventory/subcategories/name.jpg"
+                  [value]="subCatForm().image"
+                  (input)="subCatForm.update(f => ({...f, image: $any($event.target).value}))">
+              </div>
+            </div>
+            <div class="manage-form__actions">
+              <button class="btn btn--outline" (click)="showSubCatForm.set(false)">Cancel</button>
+              <button class="btn btn--primary" (click)="saveSubCat()">
+                <span class="material-symbols-outlined">save</span>
+                {{ editingSubCat() ? 'Save Changes' : 'Add Sub-Category' }}
+              </button>
+            </div>
+          </div>
+        } @else {
+          <button class="btn btn--primary manage-add-btn" (click)="openAddSubCat()">
+            <span class="material-symbols-outlined">add</span> Add Sub-Category
+          </button>
+        }
+      }
+
+    </div>
   </div>
 </div>
 }
